@@ -1,8 +1,5 @@
-"use client";
-
-import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import MovieCard from "@/components/MovieCard";
+// components/MovieRow.tsx
+import Link from "next/link";
 
 interface Movie {
     id: string;
@@ -10,63 +7,24 @@ interface Movie {
     poster: string;
 }
 
-interface MovieRowProps {
-    title: string;
-    movies: Movie[];
-}
-
-export default function MovieRow({ title, movies }: MovieRowProps) {
-    const rowRef = useRef<HTMLDivElement>(null);
-
-    const scroll = (direction: "left" | "right") => {
-        if (!rowRef.current) return;
-
-        const amount = 300; // quanto scorre a ogni click
-        const newPosition =
-            direction === "left"
-                ? rowRef.current.scrollLeft - amount
-                : rowRef.current.scrollLeft + amount;
-
-        rowRef.current.scrollTo({
-            left: newPosition,
-            behavior: "smooth",
-        });
-    };
-
+export default function MovieRow({ title, movies }: { title: string, movies: Movie[] }) {
     return (
-        <section className="relative mb-8">
-            <h2 className="text-white text-xl font-semibold mb-2">{title}</h2>
-
-            {/* Freccia sinistra */}
-            <button
-                onClick={() => scroll("left")}
-                className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 bg-black/40 p-2 rounded-full hover:bg-black/70 transition-opacity"
-            >
-                <ChevronLeft className="text-white" />
-            </button>
-
-            {/* Container scorrevole */}
-            <div
-                ref={rowRef}
-                className="flex gap-4 overflow-x-scroll scroll-smooth scrollbar-hide py-2 px-8"
-            >
+        <section className="space-y-4">
+            <h2 className="text-xl md:text-2xl font-bold text-zinc-200 px-4">{title}</h2>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-4">
                 {movies.map((movie) => (
-                    <MovieCard
+                    <Link
                         key={movie.id}
-                        id={movie.id}
-                        title={movie.title}
-                        poster={movie.poster}
-                    />
+                        href={`?movie=${movie.id}`}
+                        scroll={false} // Impedisce alla pagina di tornare in alto
+                        className="relative min-w-[200px] md:min-w-[280px] aspect-video bg-zinc-800 rounded-md overflow-hidden transition-transform duration-300 hover:scale-110 hover:z-50 cursor-pointer"
+                    >
+                        <div className="w-full h-full bg-zinc-700 flex items-center justify-center text-xs italic">
+                            {movie.title}
+                        </div>
+                    </Link>
                 ))}
             </div>
-
-            {/* Freccia destra */}
-            <button
-                onClick={() => scroll("right")}
-                className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 bg-black/40 p-2 rounded-full hover:bg-black/70 transition-opacity"
-            >
-                <ChevronRight className="text-white" />
-            </button>
         </section>
     );
 }

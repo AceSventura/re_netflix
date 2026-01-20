@@ -1,48 +1,146 @@
+import { Play, Plus, ThumbsUp, X } from "lucide-react"; // Importa icone simili a Netflix
+
 interface PageProps {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }
 
-export default function MovieDetailPage({ params }: PageProps) {
-    const { id } = params;
+export default async function MovieDetailPage({ params }: PageProps) {
+    const { id } = await params;
 
-    // Dati fittizi, in produzione fai fetch dall'API
+    // Dati estratti dall'HTML di KPop Demon Hunters
     const movie = {
-        title: "Esempio Film",
-        description:
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Questo è un esempio di descrizione del film/serie.",
-        trailer: "/trailer.mp4",
-        episodes: ["Episodio 1", "Episodio 2", "Episodio 3"],
+        title: "KPop Demon Hunters",
+        logoUrl: "/path-to-kpop-logo.png", // Immagine del titolo
+        heroImage: "https://occ-0-2581-784.1.nflxso.net/dnm/api/v6/6AYY37jfdO6hpXcMjf9Yu5cnmO0/AAAABadE8Bq3QOWgiPE4OPFeXFVSvhSwAgYdqFzXqmIbrcuZkfJhCfYQ5rtt.jpg",
+        year: 2025,
+        maturity: "10+",
+        duration: "1h 39min",
+        description: "Un trio di amiche usa le proprie potenti voci per proteggere il mondo dai demoni in questo elegante mix di azione, commedia, romanticismo e canzoni K-pop orecchiabili.",
+        cast: ["Arden Cho", "Ahn Hyo-seop", "Ken Jeong"],
+        genres: ["Musica", "Film per famiglie", "Azione"],
+        features: ["Anche in versione karaoke", "Audiodescrizione"],
+        // Simulazione della "Collezione" o Episodi trovati nell'HTML
+        collection: [
+            {
+                id: "81498621",
+                title: "KPop Demon Hunters",
+                duration: "1h 39min",
+                thumbnail: "/thumb-main.jpg",
+                synopsis: "Le superstar del K-pop Rumi, Mira e Zoey usano i loro poteri segreti..."
+            },
+            {
+                id: "82125877",
+                title: "KPop Demon Hunters: Canta con noi",
+                duration: "1h 35min",
+                thumbnail: "/thumb-karaoke.jpg",
+                synopsis: "Canta le tue canzoni preferite e aiuta a chiudere l'Honmoon."
+            },
+            {
+                id: "82154641",
+                title: "KPop Demon Hunters: Il camino",
+                duration: "1h",
+                thumbnail: "/thumb-fireplace.jpg",
+                synopsis: "Guarda le fiamme di Gwi-Ma danzare mentre la musica divampa."
+            }
+        ]
     };
 
     return (
-        <main className="p-8 text-white">
-            {/* Titolo */}
-            <h1 className="text-3xl font-bold mb-4">{movie.title}</h1>
+        <div className="min-h-screen bg-[#141414] text-white font-sans">
+            {/* --- 1. SEZIONE HERO --- */}
+            <section className="relative w-full aspect-video md:h-[70vh]">
+                <div className="absolute inset-0">
+                    <img
+                        src={movie.heroImage}
+                        alt={movie.title}
+                        className="w-full h-full object-cover"
+                    />
+                    {/* Overlay gradiente nero tipico di Netflix */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/30" />
+                </div>
 
-            {/* Trailer */}
-            <video
-                controls
-                className="w-full max-w-3xl rounded-md mb-4 bg-black"
-            >
-                <source src={movie.trailer} type="video/mp4" />
-                Il tuo browser non supporta il video.
-            </video>
+                <div className="absolute bottom-10 left-8 md:left-16 w-full max-w-xl p-4">
+                    {/* Invece di H1, Netflix usa spesso il logo in PNG */}
+                    <h1 className="text-4xl md:text-6xl font-black mb-6 uppercase tracking-tighter">
+                        {movie.title}
+                    </h1>
 
-            {/* Descrizione */}
-            <p className="mb-6">{movie.description}</p>
+                    <div className="flex gap-3 mb-6">
+                        <button className="flex items-center gap-2 px-8 py-2 bg-white text-black rounded font-bold hover:bg-white/80 transition">
+                            <Play fill="black" /> Riproduci
+                        </button>
+                        <button className="flex items-center justify-center w-10 h-10 bg-[#2a2a2a]/60 border-2 border-gray-400 rounded-full hover:border-white transition">
+                            <Plus />
+                        </button>
+                        <button className="flex items-center justify-center w-10 h-10 bg-[#2a2a2a]/60 border-2 border-gray-400 rounded-full hover:border-white transition">
+                            <ThumbsUp size={20} />
+                        </button>
+                    </div>
+                </div>
+            </section>
 
-            {/* Episodi */}
-            <h2 className="text-2xl font-semibold mb-2">Episodi</h2>
-            <ul className="list-disc pl-5 space-y-1 mb-6">
-                {movie.episodes.map((ep, index) => (
-                    <li key={index}>{ep}</li>
-                ))}
-            </ul>
+            {/* --- 2. GRIGLIA INFO --- */}
+            <section className="px-8 md:px-16 py-10 grid grid-cols-1 md:grid-cols-12 gap-10">
+                {/* Colonna Sinistra: Sinossi e Metadati */}
+                <div className="md:col-span-8 space-y-6">
+                    <div className="flex items-center gap-2 text-lg">
+                        <span className="text-green-400 font-bold">98% compatibile</span>
+                        <span>{movie.year}</span>
+                        <span className="border border-gray-500 px-1.5 text-sm uppercase">{movie.maturity}</span>
+                        <span>{movie.duration}</span>
+                        <span className="border border-gray-500 px-1 text-[10px] rounded-sm">HD</span>
+                    </div>
 
-            {/* Pulsante Guarda Ora */}
-            <button className="px-6 py-2 bg-red-600 rounded font-bold hover:bg-red-700 transition">
-                Guarda Ora
-            </button>
-        </main>
+                    <p className="text-xl leading-snug max-w-3xl">
+                        {movie.description}
+                    </p>
+                </div>
+
+                {/* Colonna Destra: Cast e Generi */}
+                <div className="md:col-span-4 text-sm space-y-4">
+                    <p><span className="text-gray-500">Cast:</span> {movie.cast.join(", ")}</p>
+                    <p><span className="text-gray-500">Generi:</span> {movie.genres.join(", ")}</p>
+                    <p><span className="text-gray-500">Caratteristiche:</span> {movie.features.join(", ")}</p>
+                </div>
+            </section>
+
+            {/* --- 3. SEZIONE EPISODI / COLLEZIONE --- */}
+            <section className="px-8 md:px-16 py-10">
+                <div className="flex justify-between items-end mb-6">
+                    <h2 className="text-2xl font-bold">Contenuti della collezione</h2>
+                    <span className="text-gray-400 text-sm">Serie originale Netflix</span>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                    {movie.collection.map((item, index) => (
+                        <div
+                            key={item.id}
+                            className="group flex flex-col md:flex-row items-center gap-6 p-6 rounded-md bg-transparent hover:bg-[#2f2f2f] transition cursor-pointer border-b border-gray-800"
+                        >
+                            <div className="text-2xl font-bold text-gray-500 min-w-[20px]">
+                                {index + 1}
+                            </div>
+
+                            <div className="relative w-40 aspect-video shrink-0 overflow-hidden rounded">
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition">
+                                    <Play fill="white" />
+                                </div>
+                                <div className="w-full h-full bg-gray-700" /> {/* Placeholder per thumbnail */}
+                            </div>
+
+                            <div className="flex-1">
+                                <div className="flex justify-between mb-2">
+                                    <h3 className="font-bold text-lg">{item.title}</h3>
+                                    <span className="text-gray-400">{item.duration}</span>
+                                </div>
+                                <p className="text-sm text-gray-400 line-clamp-3">
+                                    {item.synopsis}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        </div>
     );
 }
