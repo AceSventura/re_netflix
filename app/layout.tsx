@@ -27,7 +27,6 @@ export default function RootLayout({
         <body
             className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
         >
-        {/* padding-top uguale all'altezza della navbar */}
         <div className="min-h-screen flex flex-col">{children}</div>
         </body>
         </html>
