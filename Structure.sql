@@ -1,3 +1,7 @@
+CREATE DATABASE IF NOT EXISTS Netflix;
+
+use Netflix;
+
 -- =========================
 -- UTENTI E PROFILI
 -- =========================
