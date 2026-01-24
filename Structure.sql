@@ -2,6 +2,8 @@ CREATE DATABASE IF NOT EXISTS Netflix;
 
 use Netflix;
 
+DROP TABLE IF EXISTS Netflix.Liste;
+
 -- =========================
 -- UTENTI E PROFILI
 -- =========================
@@ -212,14 +214,6 @@ CREATE TABLE Salva_serie (
     PRIMARY KEY (id_serie_tv, id_profilo),
     FOREIGN KEY (id_serie_tv) REFERENCES Serie_tv(id_serie_tv),
     FOREIGN KEY (id_profilo) REFERENCES Profili(id_profilo)
-);
-
-CREATE TABLE Liste (
-    id_profilo INT NOT NULL,
-    id_contenuto INT NOT NULL,
-    PRIMARY KEY (id_profilo, id_contenuto),
-    FOREIGN KEY (id_profilo) REFERENCES Profili(id_profilo),
-    FOREIGN KEY (id_contenuto) REFERENCES Contenuti(id_contenuto)
 );
 
 -- =========================
