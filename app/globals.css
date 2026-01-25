@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Logo netflix */
+.pinning-header .main-header .logo {
+  color: #e50914;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 1.8em;
+  margin-right: 5px;
+  text-decoration: none;
+  vertical-align: middle;
+}
 :root {
   --background: #ffffff;
   --foreground: #171717;
