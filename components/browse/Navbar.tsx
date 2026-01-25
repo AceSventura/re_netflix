@@ -1,10 +1,13 @@
 "use client";
 
-import { usePathname } from "next/navigation"; // Importa l'hook per leggere l'URL
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Bebas_Neue } from "next/font/google";
 import Link from "next/link";
+import Image from "next/image"; // Importato per ottimizzazione
 import { Search, Bell, ChevronDown, Pencil, UserRoundPlus, User, HelpCircle } from "lucide-react";
+
+import { useProfiles } from "@/context/ProfileContext";
 
 const bebas = Bebas_Neue({
     subsets: ["latin"],
@@ -12,8 +15,13 @@ const bebas = Bebas_Neue({
 });
 
 export default function Navbar() {
-    const pathname = usePathname(); // Ottieni l'URL corrente (es: "/browse/movies")
+    // 1. Estraiamo i dati dal Context
+    const { profiles, selectProfile, selectedProfile } = useProfiles();
+    const pathname = usePathname();
     
+    // 2. Filtriamo per mostrare gli ALTRI profili nel menu a tendina
+    const otherProfiles = profiles.filter(p => p.id !== selectedProfile?.id);
+
     const navLinks = [
         { name: "Home", href: "/browse" },
         { name: "Serie", href: "/browse/series" },
@@ -33,6 +41,9 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
+    // Se per qualche motivo il profilo non è ancora caricato, evitiamo crash
+    if (!selectedProfile) return null;
+
     return (
         <nav
             className={`fixed top-0 w-full z-50 px-4 md:px-12 py-4 flex items-center justify-between transition-colors duration-500 ${
@@ -49,17 +60,13 @@ export default function Navbar() {
 
                 <ul className="hidden lg:flex items-center gap-5 text-sm transition-colors">
                     {navLinks.map((link) => {
-                        // Verifichiamo se il link è quello attivo
                         const isActive = pathname === link.href;
-
                         return (
                             <li key={link.href}>
                                 <Link
                                     href={link.href}
                                     className={`cursor-pointer transition duration-300 hover:text-gray-300 ${
-                                        isActive 
-                                            ? "font-bold text-white" // Stile per pagina corrente
-                                            : "font-normal text-[#E5E5E5]" // Stile normale
+                                        isActive ? "font-bold text-white" : "font-normal text-[#E5E5E5]"
                                     }`}
                                 >
                                     {link.name}
@@ -87,39 +94,43 @@ export default function Navbar() {
                     onMouseLeave={() => setShowProfileMenu(false)}
                 >
                     <div className="flex items-center gap-2 cursor-pointer group py-2">
-                        <div className="w-8 h-8 rounded overflow-hidden">
-                            <img
-                                src="https://occ-0-2581-784.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABeukSeWjyiUEgKzcXwSdeS8ul5WNIOTMt6QsgVlobiBA8SKShw4Mfb2QdD6R_i0TZZ3fr4409fGv4q1kXrmpUSIevJDc90M.png?r=dec"
-                                alt="Profile"
-                                className="w-full h-full object-cover"
+                        <div className="w-8 h-8 rounded overflow-hidden relative">
+                            <Image
+                                src={selectedProfile.avatar}
+                                alt={selectedProfile.name}
+                                fill
+                                className="object-cover"
                             />
                         </div>
                         <ChevronDown size={14} className={`transition-transform duration-300 ${showProfileMenu ? "rotate-180" : ""}`} />
                     </div>
 
-                    {/* DROPDOWN MENU */}
+                    {/* DROPDOWN MENU DINAMICO */}
                     {showProfileMenu && (
                         <div className="absolute right-0 top-full pt-4 w-56 animate-in fade-in duration-200">
                             {/* Triangolino */}
                             <div className="absolute top-2 right-4 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-zinc-100/10" />
                             
                             <div className="bg-black/95 border border-zinc-800 text-white text-[13px] shadow-xl">
-                                {/* Lista Profili */}
+                                {/* Lista Profili Altri */}
                                 <div className="p-3 space-y-3">
-                                    <div className="flex items-center gap-3 group/item cursor-pointer">
-                                        <div className="w-8 h-8 bg-yellow-600 rounded-sm overflow-hidden flex items-center justify-center">
-                                            <span className="text-[10px]">🎭</span>
+                                    {otherProfiles.map((profile) => (
+                                        <div 
+                                            key={profile.id} 
+                                            onClick={() => selectProfile(profile)}
+                                            className="flex items-center gap-3 group/item cursor-pointer"
+                                        >
+                                            <div className="relative w-8 h-8 rounded-sm overflow-hidden">
+                                                <Image 
+                                                    src={profile.avatar} 
+                                                    alt={profile.name} 
+                                                    fill 
+                                                    className="object-cover"
+                                                />
+                                            </div>
+                                            <span className="group-hover/item:underline">{profile.name}</span>
                                         </div>
-                                        <span className="group-hover/item:underline">Papà</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 group/item cursor-pointer">
-                                        <div className="w-8 h-8 bg-purple-600 rounded-sm"></div>
-                                        <span className="group-hover/item:underline">Grazia</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 group/item cursor-pointer">
-                                        <div className="w-8 h-8 bg-blue-400 rounded-sm flex items-center justify-center text-[10px] text-white">bambini</div>
-                                        <span className="group-hover/item:underline">Bambini</span>
-                                    </div>
+                                    ))}
                                 </div>
 
                                 <div className="h-[1px] bg-zinc-800" />
@@ -146,8 +157,11 @@ export default function Navbar() {
 
                                 <div className="h-[1px] bg-zinc-800" />
 
-                                {/* Logout */}
-                                <div className="p-4 text-center cursor-pointer hover:underline font-medium">
+                                {/* Logout: Resetta il profilo a null */}
+                                <div 
+                                    onClick={() => selectProfile(null)}
+                                    className="p-4 text-center cursor-pointer hover:underline font-medium text-zinc-200"
+                                >
                                     Esci da Netflix
                                 </div>
                             </div>

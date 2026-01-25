@@ -1,22 +1,29 @@
-import React from 'react';
+"use client";
+
 import { Pencil, UserRoundPlus, User, HelpCircle, LogOut } from 'lucide-react';
 
-const NetflixProfileDropdown = () => {
-  const profiles = [
-    { name: 'Papà', avatar: 'https://placeholder.com/profile1.jpg', color: 'bg-yellow-600' },
-    { name: 'Mamma', avatar: 'https://placeholder.com/profile2.jpg', color: 'bg-purple-600' },
-    { name: 'Bambini', avatar: 'https://placeholder.com/profile3.jpg', color: 'bg-blue-400' },
-  ];
+import { useProfiles, Profile } from '@/context/ProfileContext';
 
+import Image from 'next/image';
+
+const NetflixProfileDropdown = () => {
+
+  const { profiles, selectProfile } = useProfiles();
+  
   return (
     <div className="w-64 bg-black/90 text-white border border-zinc-700 shadow-2xl font-sans text-sm">
       {/* Lista Profili */}
       <div className="p-4 space-y-3">
         {profiles.map((profile, index) => (
           <div key={index} className="flex items-center gap-3 group cursor-pointer">
-            <div className={`w-8 h-8 rounded-sm ${profile.color} overflow-hidden`}>
-              {/* Qui andrebbe l'immagine vera del profilo */}
-            </div>
+            <Image 
+              src={profile.avatar} 
+              alt={profile.name} 
+              width={160} 
+              height={160}
+              className="object-cover"
+              priority={true} // Carica subito queste immagini perché sono "above the fold"
+          />
             <span className="group-hover:underline">{profile.name}</span>
           </div>
         ))}
