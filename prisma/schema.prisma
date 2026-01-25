@@ -42,17 +42,32 @@ model Abbonamenti {
   sottoscrive    Sottoscrive[]
 }
 
-model Sottoscrive {
+model Sottoscrizioni {
+  id_sottoscrizione          Int         @id @default(autoincrement())
   data_inizio_sottoscrizione DateTime    @db.Date
   data_scadenza              DateTime    @db.Date
   id_utente                  Int
   id_abbonamento             Int
-  utente                     Utenti      @relation(fields: [id_utente], references: [id_utente], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrive_ibfk_1")
-  abbonamento                Abbonamenti @relation(fields: [id_abbonamento], references: [id_abbonamento], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrive_ibfk_2")
+  id_fattura                 Int
+  utente                     Utenti      @relation(fields: [id_utente], references: [id_utente], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_1")
+  abbonamento                Abbonamenti @relation(fields: [id_abbonamento], references: [id_abbonamento], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_2")
+  fattura                    Fatture     @relation(fields: [id_fattura], references:[id_fattura], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_3")
 
-  @@id([id_utente, id_abbonamento])
   @@index([id_abbonamento], map: "id_abbonamento")
 }
+
+model Fatture {
+  id_fattura     Int      @id @default(autoincrement())
+  importo        Decimal  @db.Decimal(10, 2)
+  file           String   @db.VarChar(2048)
+  data_emissione DateTime @db.Date
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@map("Fatture")
+}
+
 
 model Serie_tv {
   id_serie_tv     Int           @id @default(autoincrement())

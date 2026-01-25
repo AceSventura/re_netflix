@@ -28,7 +28,7 @@ CREATE TABLE Profili (
 );
 
 -- =========================
--- ABBONAMENTI
+-- ABBONAMENTI, FATTURE
 -- =========================
 
 CREATE TABLE Abbonamenti (
@@ -37,14 +37,25 @@ CREATE TABLE Abbonamenti (
     costo_mensile DECIMAL(6,2) NOT NULL
 );
 
-CREATE TABLE Sottoscrive (
+CREATE TABLE Sottoscrizione (
+    id_sottoscrizione INT AUTO_INCREMENT PRIMARY KEY,
     data_inizio_sottoscrizione DATE NOT NULL,
     data_scadenza DATE NOT NULL,
     id_utente INT NOT NULL,
     id_abbonamento INT NOT NULL,
-    PRIMARY KEY (id_utente, id_abbonamento),
+    id_fattura INT NOT NULL,
     FOREIGN KEY (id_utente) REFERENCES Utenti(id_utente),
-    FOREIGN KEY (id_abbonamento) REFERENCES Abbonamenti(id_abbonamento)
+    FOREIGN KEY (id_abbonamento) REFERENCES Abbonamenti(id_abbonamento),
+    FOREIGN KEY (id_fattura) REFERENCES Fatture(id_fattura)
+);
+
+CREATE TABLE Fatture (
+    id_fattura INT AUTO_INCREMENT PRIMARY KEY,
+    importo DECIMAL(10, 2) NOT NULL,
+    file VARCHAR(2048) NOT NULL,
+    data_emissione DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- =========================
