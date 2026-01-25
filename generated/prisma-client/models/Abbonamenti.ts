@@ -204,14 +204,14 @@ export type AbbonamentiWhereInput = {
   id_abbonamento?: Prisma.IntFilter<"Abbonamenti"> | number
   piano?: Prisma.StringFilter<"Abbonamenti"> | string
   costo_mensile?: Prisma.DecimalFilter<"Abbonamenti"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  sottoscrive?: Prisma.SottoscriveListRelationFilter
+  sottoscrizioni?: Prisma.SottoscrizioniListRelationFilter
 }
 
 export type AbbonamentiOrderByWithRelationInput = {
   id_abbonamento?: Prisma.SortOrder
   piano?: Prisma.SortOrder
   costo_mensile?: Prisma.SortOrder
-  sottoscrive?: Prisma.SottoscriveOrderByRelationAggregateInput
+  sottoscrizioni?: Prisma.SottoscrizioniOrderByRelationAggregateInput
   _relevance?: Prisma.AbbonamentiOrderByRelevanceInput
 }
 
@@ -222,7 +222,7 @@ export type AbbonamentiWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.AbbonamentiWhereInput | Prisma.AbbonamentiWhereInput[]
   piano?: Prisma.StringFilter<"Abbonamenti"> | string
   costo_mensile?: Prisma.DecimalFilter<"Abbonamenti"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  sottoscrive?: Prisma.SottoscriveListRelationFilter
+  sottoscrizioni?: Prisma.SottoscrizioniListRelationFilter
 }, "id_abbonamento">
 
 export type AbbonamentiOrderByWithAggregationInput = {
@@ -248,27 +248,27 @@ export type AbbonamentiScalarWhereWithAggregatesInput = {
 export type AbbonamentiCreateInput = {
   piano: string
   costo_mensile: runtime.Decimal | runtime.DecimalJsLike | number | string
-  sottoscrive?: Prisma.SottoscriveCreateNestedManyWithoutAbbonamentoInput
+  sottoscrizioni?: Prisma.SottoscrizioniCreateNestedManyWithoutAbbonamentoInput
 }
 
 export type AbbonamentiUncheckedCreateInput = {
   id_abbonamento?: number
   piano: string
   costo_mensile: runtime.Decimal | runtime.DecimalJsLike | number | string
-  sottoscrive?: Prisma.SottoscriveUncheckedCreateNestedManyWithoutAbbonamentoInput
+  sottoscrizioni?: Prisma.SottoscrizioniUncheckedCreateNestedManyWithoutAbbonamentoInput
 }
 
 export type AbbonamentiUpdateInput = {
   piano?: Prisma.StringFieldUpdateOperationsInput | string
   costo_mensile?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  sottoscrive?: Prisma.SottoscriveUpdateManyWithoutAbbonamentoNestedInput
+  sottoscrizioni?: Prisma.SottoscrizioniUpdateManyWithoutAbbonamentoNestedInput
 }
 
 export type AbbonamentiUncheckedUpdateInput = {
   id_abbonamento?: Prisma.IntFieldUpdateOperationsInput | number
   piano?: Prisma.StringFieldUpdateOperationsInput | string
   costo_mensile?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  sottoscrive?: Prisma.SottoscriveUncheckedUpdateManyWithoutAbbonamentoNestedInput
+  sottoscrizioni?: Prisma.SottoscrizioniUncheckedUpdateManyWithoutAbbonamentoNestedInput
 }
 
 export type AbbonamentiCreateManyInput = {
@@ -335,53 +335,53 @@ export type DecimalFieldUpdateOperationsInput = {
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
-export type AbbonamentiCreateNestedOneWithoutSottoscriveInput = {
-  create?: Prisma.XOR<Prisma.AbbonamentiCreateWithoutSottoscriveInput, Prisma.AbbonamentiUncheckedCreateWithoutSottoscriveInput>
-  connectOrCreate?: Prisma.AbbonamentiCreateOrConnectWithoutSottoscriveInput
+export type AbbonamentiCreateNestedOneWithoutSottoscrizioniInput = {
+  create?: Prisma.XOR<Prisma.AbbonamentiCreateWithoutSottoscrizioniInput, Prisma.AbbonamentiUncheckedCreateWithoutSottoscrizioniInput>
+  connectOrCreate?: Prisma.AbbonamentiCreateOrConnectWithoutSottoscrizioniInput
   connect?: Prisma.AbbonamentiWhereUniqueInput
 }
 
-export type AbbonamentiUpdateOneRequiredWithoutSottoscriveNestedInput = {
-  create?: Prisma.XOR<Prisma.AbbonamentiCreateWithoutSottoscriveInput, Prisma.AbbonamentiUncheckedCreateWithoutSottoscriveInput>
-  connectOrCreate?: Prisma.AbbonamentiCreateOrConnectWithoutSottoscriveInput
-  upsert?: Prisma.AbbonamentiUpsertWithoutSottoscriveInput
+export type AbbonamentiUpdateOneRequiredWithoutSottoscrizioniNestedInput = {
+  create?: Prisma.XOR<Prisma.AbbonamentiCreateWithoutSottoscrizioniInput, Prisma.AbbonamentiUncheckedCreateWithoutSottoscrizioniInput>
+  connectOrCreate?: Prisma.AbbonamentiCreateOrConnectWithoutSottoscrizioniInput
+  upsert?: Prisma.AbbonamentiUpsertWithoutSottoscrizioniInput
   connect?: Prisma.AbbonamentiWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.AbbonamentiUpdateToOneWithWhereWithoutSottoscriveInput, Prisma.AbbonamentiUpdateWithoutSottoscriveInput>, Prisma.AbbonamentiUncheckedUpdateWithoutSottoscriveInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AbbonamentiUpdateToOneWithWhereWithoutSottoscrizioniInput, Prisma.AbbonamentiUpdateWithoutSottoscrizioniInput>, Prisma.AbbonamentiUncheckedUpdateWithoutSottoscrizioniInput>
 }
 
-export type AbbonamentiCreateWithoutSottoscriveInput = {
+export type AbbonamentiCreateWithoutSottoscrizioniInput = {
   piano: string
   costo_mensile: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
-export type AbbonamentiUncheckedCreateWithoutSottoscriveInput = {
+export type AbbonamentiUncheckedCreateWithoutSottoscrizioniInput = {
   id_abbonamento?: number
   piano: string
   costo_mensile: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
-export type AbbonamentiCreateOrConnectWithoutSottoscriveInput = {
+export type AbbonamentiCreateOrConnectWithoutSottoscrizioniInput = {
   where: Prisma.AbbonamentiWhereUniqueInput
-  create: Prisma.XOR<Prisma.AbbonamentiCreateWithoutSottoscriveInput, Prisma.AbbonamentiUncheckedCreateWithoutSottoscriveInput>
+  create: Prisma.XOR<Prisma.AbbonamentiCreateWithoutSottoscrizioniInput, Prisma.AbbonamentiUncheckedCreateWithoutSottoscrizioniInput>
 }
 
-export type AbbonamentiUpsertWithoutSottoscriveInput = {
-  update: Prisma.XOR<Prisma.AbbonamentiUpdateWithoutSottoscriveInput, Prisma.AbbonamentiUncheckedUpdateWithoutSottoscriveInput>
-  create: Prisma.XOR<Prisma.AbbonamentiCreateWithoutSottoscriveInput, Prisma.AbbonamentiUncheckedCreateWithoutSottoscriveInput>
+export type AbbonamentiUpsertWithoutSottoscrizioniInput = {
+  update: Prisma.XOR<Prisma.AbbonamentiUpdateWithoutSottoscrizioniInput, Prisma.AbbonamentiUncheckedUpdateWithoutSottoscrizioniInput>
+  create: Prisma.XOR<Prisma.AbbonamentiCreateWithoutSottoscrizioniInput, Prisma.AbbonamentiUncheckedCreateWithoutSottoscrizioniInput>
   where?: Prisma.AbbonamentiWhereInput
 }
 
-export type AbbonamentiUpdateToOneWithWhereWithoutSottoscriveInput = {
+export type AbbonamentiUpdateToOneWithWhereWithoutSottoscrizioniInput = {
   where?: Prisma.AbbonamentiWhereInput
-  data: Prisma.XOR<Prisma.AbbonamentiUpdateWithoutSottoscriveInput, Prisma.AbbonamentiUncheckedUpdateWithoutSottoscriveInput>
+  data: Prisma.XOR<Prisma.AbbonamentiUpdateWithoutSottoscrizioniInput, Prisma.AbbonamentiUncheckedUpdateWithoutSottoscrizioniInput>
 }
 
-export type AbbonamentiUpdateWithoutSottoscriveInput = {
+export type AbbonamentiUpdateWithoutSottoscrizioniInput = {
   piano?: Prisma.StringFieldUpdateOperationsInput | string
   costo_mensile?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
-export type AbbonamentiUncheckedUpdateWithoutSottoscriveInput = {
+export type AbbonamentiUncheckedUpdateWithoutSottoscrizioniInput = {
   id_abbonamento?: Prisma.IntFieldUpdateOperationsInput | number
   piano?: Prisma.StringFieldUpdateOperationsInput | string
   costo_mensile?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -393,11 +393,11 @@ export type AbbonamentiUncheckedUpdateWithoutSottoscriveInput = {
  */
 
 export type AbbonamentiCountOutputType = {
-  sottoscrive: number
+  sottoscrizioni: number
 }
 
 export type AbbonamentiCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  sottoscrive?: boolean | AbbonamentiCountOutputTypeCountSottoscriveArgs
+  sottoscrizioni?: boolean | AbbonamentiCountOutputTypeCountSottoscrizioniArgs
 }
 
 /**
@@ -413,8 +413,8 @@ export type AbbonamentiCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.
 /**
  * AbbonamentiCountOutputType without action
  */
-export type AbbonamentiCountOutputTypeCountSottoscriveArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.SottoscriveWhereInput
+export type AbbonamentiCountOutputTypeCountSottoscrizioniArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SottoscrizioniWhereInput
 }
 
 
@@ -422,7 +422,7 @@ export type AbbonamentiSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   id_abbonamento?: boolean
   piano?: boolean
   costo_mensile?: boolean
-  sottoscrive?: boolean | Prisma.Abbonamenti$sottoscriveArgs<ExtArgs>
+  sottoscrizioni?: boolean | Prisma.Abbonamenti$sottoscrizioniArgs<ExtArgs>
   _count?: boolean | Prisma.AbbonamentiCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["abbonamenti"]>
 
@@ -436,14 +436,14 @@ export type AbbonamentiSelectScalar = {
 
 export type AbbonamentiOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id_abbonamento" | "piano" | "costo_mensile", ExtArgs["result"]["abbonamenti"]>
 export type AbbonamentiInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  sottoscrive?: boolean | Prisma.Abbonamenti$sottoscriveArgs<ExtArgs>
+  sottoscrizioni?: boolean | Prisma.Abbonamenti$sottoscrizioniArgs<ExtArgs>
   _count?: boolean | Prisma.AbbonamentiCountOutputTypeDefaultArgs<ExtArgs>
 }
 
 export type $AbbonamentiPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Abbonamenti"
   objects: {
-    sottoscrive: Prisma.$SottoscrivePayload<ExtArgs>[]
+    sottoscrizioni: Prisma.$SottoscrizioniPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id_abbonamento: number
@@ -789,7 +789,7 @@ readonly fields: AbbonamentiFieldRefs;
  */
 export interface Prisma__AbbonamentiClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  sottoscrive<T extends Prisma.Abbonamenti$sottoscriveArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Abbonamenti$sottoscriveArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SottoscrivePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sottoscrizioni<T extends Prisma.Abbonamenti$sottoscrizioniArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Abbonamenti$sottoscrizioniArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SottoscrizioniPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1165,27 +1165,27 @@ export type AbbonamentiDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.I
 }
 
 /**
- * Abbonamenti.sottoscrive
+ * Abbonamenti.sottoscrizioni
  */
-export type Abbonamenti$sottoscriveArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Abbonamenti$sottoscrizioniArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Sottoscrive
+   * Select specific fields to fetch from the Sottoscrizioni
    */
-  select?: Prisma.SottoscriveSelect<ExtArgs> | null
+  select?: Prisma.SottoscrizioniSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Sottoscrive
+   * Omit specific fields from the Sottoscrizioni
    */
-  omit?: Prisma.SottoscriveOmit<ExtArgs> | null
+  omit?: Prisma.SottoscrizioniOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SottoscriveInclude<ExtArgs> | null
-  where?: Prisma.SottoscriveWhereInput
-  orderBy?: Prisma.SottoscriveOrderByWithRelationInput | Prisma.SottoscriveOrderByWithRelationInput[]
-  cursor?: Prisma.SottoscriveWhereUniqueInput
+  include?: Prisma.SottoscrizioniInclude<ExtArgs> | null
+  where?: Prisma.SottoscrizioniWhereInput
+  orderBy?: Prisma.SottoscrizioniOrderByWithRelationInput | Prisma.SottoscrizioniOrderByWithRelationInput[]
+  cursor?: Prisma.SottoscrizioniWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.SottoscriveScalarFieldEnum | Prisma.SottoscriveScalarFieldEnum[]
+  distinct?: Prisma.SottoscrizioniScalarFieldEnum | Prisma.SottoscrizioniScalarFieldEnum[]
 }
 
 /**

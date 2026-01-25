@@ -54,7 +54,8 @@ export const ModelName = {
   Utenti: 'Utenti',
   Profili: 'Profili',
   Abbonamenti: 'Abbonamenti',
-  Sottoscrive: 'Sottoscrive',
+  Fatture: 'Fatture',
+  Sottoscrizioni: 'Sottoscrizioni',
   Serie_tv: 'Serie_tv',
   Stagioni: 'Stagioni',
   Contenuti: 'Contenuti',
@@ -128,14 +129,28 @@ export const AbbonamentiScalarFieldEnum = {
 export type AbbonamentiScalarFieldEnum = (typeof AbbonamentiScalarFieldEnum)[keyof typeof AbbonamentiScalarFieldEnum]
 
 
-export const SottoscriveScalarFieldEnum = {
+export const FattureScalarFieldEnum = {
+  id_fattura: 'id_fattura',
+  importo: 'importo',
+  file: 'file',
+  data_emissione: 'data_emissione',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type FattureScalarFieldEnum = (typeof FattureScalarFieldEnum)[keyof typeof FattureScalarFieldEnum]
+
+
+export const SottoscrizioniScalarFieldEnum = {
+  id_sottoscrizione: 'id_sottoscrizione',
   data_inizio_sottoscrizione: 'data_inizio_sottoscrizione',
   data_scadenza: 'data_scadenza',
   id_utente: 'id_utente',
-  id_abbonamento: 'id_abbonamento'
+  id_abbonamento: 'id_abbonamento',
+  id_fattura: 'id_fattura'
 } as const
 
-export type SottoscriveScalarFieldEnum = (typeof SottoscriveScalarFieldEnum)[keyof typeof SottoscriveScalarFieldEnum]
+export type SottoscrizioniScalarFieldEnum = (typeof SottoscrizioniScalarFieldEnum)[keyof typeof SottoscrizioniScalarFieldEnum]
 
 
 export const Serie_tvScalarFieldEnum = {
@@ -375,6 +390,13 @@ export const AbbonamentiOrderByRelevanceFieldEnum = {
 } as const
 
 export type AbbonamentiOrderByRelevanceFieldEnum = (typeof AbbonamentiOrderByRelevanceFieldEnum)[keyof typeof AbbonamentiOrderByRelevanceFieldEnum]
+
+
+export const FattureOrderByRelevanceFieldEnum = {
+  file: 'file'
+} as const
+
+export type FattureOrderByRelevanceFieldEnum = (typeof FattureOrderByRelevanceFieldEnum)[keyof typeof FattureOrderByRelevanceFieldEnum]
 
 
 export const Serie_tvOrderByRelevanceFieldEnum = {

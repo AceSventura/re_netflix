@@ -225,7 +225,7 @@ export type UtentiWhereInput = {
   data_nascita?: Prisma.DateTimeFilter<"Utenti"> | Date | string
   password?: Prisma.StringFilter<"Utenti"> | string
   profili?: Prisma.ProfiliListRelationFilter
-  sottoscrive?: Prisma.SottoscriveListRelationFilter
+  sottoscrizioni?: Prisma.SottoscrizioniListRelationFilter
 }
 
 export type UtentiOrderByWithRelationInput = {
@@ -236,7 +236,7 @@ export type UtentiOrderByWithRelationInput = {
   data_nascita?: Prisma.SortOrder
   password?: Prisma.SortOrder
   profili?: Prisma.ProfiliOrderByRelationAggregateInput
-  sottoscrive?: Prisma.SottoscriveOrderByRelationAggregateInput
+  sottoscrizioni?: Prisma.SottoscrizioniOrderByRelationAggregateInput
   _relevance?: Prisma.UtentiOrderByRelevanceInput
 }
 
@@ -251,7 +251,7 @@ export type UtentiWhereUniqueInput = Prisma.AtLeast<{
   data_nascita?: Prisma.DateTimeFilter<"Utenti"> | Date | string
   password?: Prisma.StringFilter<"Utenti"> | string
   profili?: Prisma.ProfiliListRelationFilter
-  sottoscrive?: Prisma.SottoscriveListRelationFilter
+  sottoscrizioni?: Prisma.SottoscrizioniListRelationFilter
 }, "id_utente" | "email">
 
 export type UtentiOrderByWithAggregationInput = {
@@ -287,7 +287,7 @@ export type UtentiCreateInput = {
   data_nascita: Date | string
   password: string
   profili?: Prisma.ProfiliCreateNestedManyWithoutUtenteInput
-  sottoscrive?: Prisma.SottoscriveCreateNestedManyWithoutUtenteInput
+  sottoscrizioni?: Prisma.SottoscrizioniCreateNestedManyWithoutUtenteInput
 }
 
 export type UtentiUncheckedCreateInput = {
@@ -298,7 +298,7 @@ export type UtentiUncheckedCreateInput = {
   data_nascita: Date | string
   password: string
   profili?: Prisma.ProfiliUncheckedCreateNestedManyWithoutUtenteInput
-  sottoscrive?: Prisma.SottoscriveUncheckedCreateNestedManyWithoutUtenteInput
+  sottoscrizioni?: Prisma.SottoscrizioniUncheckedCreateNestedManyWithoutUtenteInput
 }
 
 export type UtentiUpdateInput = {
@@ -308,7 +308,7 @@ export type UtentiUpdateInput = {
   data_nascita?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   profili?: Prisma.ProfiliUpdateManyWithoutUtenteNestedInput
-  sottoscrive?: Prisma.SottoscriveUpdateManyWithoutUtenteNestedInput
+  sottoscrizioni?: Prisma.SottoscrizioniUpdateManyWithoutUtenteNestedInput
 }
 
 export type UtentiUncheckedUpdateInput = {
@@ -319,7 +319,7 @@ export type UtentiUncheckedUpdateInput = {
   data_nascita?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   profili?: Prisma.ProfiliUncheckedUpdateManyWithoutUtenteNestedInput
-  sottoscrive?: Prisma.SottoscriveUncheckedUpdateManyWithoutUtenteNestedInput
+  sottoscrizioni?: Prisma.SottoscrizioniUncheckedUpdateManyWithoutUtenteNestedInput
 }
 
 export type UtentiCreateManyInput = {
@@ -424,18 +424,18 @@ export type UtentiUpdateOneRequiredWithoutProfiliNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UtentiUpdateToOneWithWhereWithoutProfiliInput, Prisma.UtentiUpdateWithoutProfiliInput>, Prisma.UtentiUncheckedUpdateWithoutProfiliInput>
 }
 
-export type UtentiCreateNestedOneWithoutSottoscriveInput = {
-  create?: Prisma.XOR<Prisma.UtentiCreateWithoutSottoscriveInput, Prisma.UtentiUncheckedCreateWithoutSottoscriveInput>
-  connectOrCreate?: Prisma.UtentiCreateOrConnectWithoutSottoscriveInput
+export type UtentiCreateNestedOneWithoutSottoscrizioniInput = {
+  create?: Prisma.XOR<Prisma.UtentiCreateWithoutSottoscrizioniInput, Prisma.UtentiUncheckedCreateWithoutSottoscrizioniInput>
+  connectOrCreate?: Prisma.UtentiCreateOrConnectWithoutSottoscrizioniInput
   connect?: Prisma.UtentiWhereUniqueInput
 }
 
-export type UtentiUpdateOneRequiredWithoutSottoscriveNestedInput = {
-  create?: Prisma.XOR<Prisma.UtentiCreateWithoutSottoscriveInput, Prisma.UtentiUncheckedCreateWithoutSottoscriveInput>
-  connectOrCreate?: Prisma.UtentiCreateOrConnectWithoutSottoscriveInput
-  upsert?: Prisma.UtentiUpsertWithoutSottoscriveInput
+export type UtentiUpdateOneRequiredWithoutSottoscrizioniNestedInput = {
+  create?: Prisma.XOR<Prisma.UtentiCreateWithoutSottoscrizioniInput, Prisma.UtentiUncheckedCreateWithoutSottoscrizioniInput>
+  connectOrCreate?: Prisma.UtentiCreateOrConnectWithoutSottoscrizioniInput
+  upsert?: Prisma.UtentiUpsertWithoutSottoscrizioniInput
   connect?: Prisma.UtentiWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UtentiUpdateToOneWithWhereWithoutSottoscriveInput, Prisma.UtentiUpdateWithoutSottoscriveInput>, Prisma.UtentiUncheckedUpdateWithoutSottoscriveInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UtentiUpdateToOneWithWhereWithoutSottoscrizioniInput, Prisma.UtentiUpdateWithoutSottoscrizioniInput>, Prisma.UtentiUncheckedUpdateWithoutSottoscrizioniInput>
 }
 
 export type UtentiCreateWithoutProfiliInput = {
@@ -444,7 +444,7 @@ export type UtentiCreateWithoutProfiliInput = {
   email: string
   data_nascita: Date | string
   password: string
-  sottoscrive?: Prisma.SottoscriveCreateNestedManyWithoutUtenteInput
+  sottoscrizioni?: Prisma.SottoscrizioniCreateNestedManyWithoutUtenteInput
 }
 
 export type UtentiUncheckedCreateWithoutProfiliInput = {
@@ -454,7 +454,7 @@ export type UtentiUncheckedCreateWithoutProfiliInput = {
   email: string
   data_nascita: Date | string
   password: string
-  sottoscrive?: Prisma.SottoscriveUncheckedCreateNestedManyWithoutUtenteInput
+  sottoscrizioni?: Prisma.SottoscrizioniUncheckedCreateNestedManyWithoutUtenteInput
 }
 
 export type UtentiCreateOrConnectWithoutProfiliInput = {
@@ -479,7 +479,7 @@ export type UtentiUpdateWithoutProfiliInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   data_nascita?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
-  sottoscrive?: Prisma.SottoscriveUpdateManyWithoutUtenteNestedInput
+  sottoscrizioni?: Prisma.SottoscrizioniUpdateManyWithoutUtenteNestedInput
 }
 
 export type UtentiUncheckedUpdateWithoutProfiliInput = {
@@ -489,10 +489,10 @@ export type UtentiUncheckedUpdateWithoutProfiliInput = {
   email?: Prisma.StringFieldUpdateOperationsInput | string
   data_nascita?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
-  sottoscrive?: Prisma.SottoscriveUncheckedUpdateManyWithoutUtenteNestedInput
+  sottoscrizioni?: Prisma.SottoscrizioniUncheckedUpdateManyWithoutUtenteNestedInput
 }
 
-export type UtentiCreateWithoutSottoscriveInput = {
+export type UtentiCreateWithoutSottoscrizioniInput = {
   nome: string
   cognome: string
   email: string
@@ -501,7 +501,7 @@ export type UtentiCreateWithoutSottoscriveInput = {
   profili?: Prisma.ProfiliCreateNestedManyWithoutUtenteInput
 }
 
-export type UtentiUncheckedCreateWithoutSottoscriveInput = {
+export type UtentiUncheckedCreateWithoutSottoscrizioniInput = {
   id_utente?: number
   nome: string
   cognome: string
@@ -511,23 +511,23 @@ export type UtentiUncheckedCreateWithoutSottoscriveInput = {
   profili?: Prisma.ProfiliUncheckedCreateNestedManyWithoutUtenteInput
 }
 
-export type UtentiCreateOrConnectWithoutSottoscriveInput = {
+export type UtentiCreateOrConnectWithoutSottoscrizioniInput = {
   where: Prisma.UtentiWhereUniqueInput
-  create: Prisma.XOR<Prisma.UtentiCreateWithoutSottoscriveInput, Prisma.UtentiUncheckedCreateWithoutSottoscriveInput>
+  create: Prisma.XOR<Prisma.UtentiCreateWithoutSottoscrizioniInput, Prisma.UtentiUncheckedCreateWithoutSottoscrizioniInput>
 }
 
-export type UtentiUpsertWithoutSottoscriveInput = {
-  update: Prisma.XOR<Prisma.UtentiUpdateWithoutSottoscriveInput, Prisma.UtentiUncheckedUpdateWithoutSottoscriveInput>
-  create: Prisma.XOR<Prisma.UtentiCreateWithoutSottoscriveInput, Prisma.UtentiUncheckedCreateWithoutSottoscriveInput>
+export type UtentiUpsertWithoutSottoscrizioniInput = {
+  update: Prisma.XOR<Prisma.UtentiUpdateWithoutSottoscrizioniInput, Prisma.UtentiUncheckedUpdateWithoutSottoscrizioniInput>
+  create: Prisma.XOR<Prisma.UtentiCreateWithoutSottoscrizioniInput, Prisma.UtentiUncheckedCreateWithoutSottoscrizioniInput>
   where?: Prisma.UtentiWhereInput
 }
 
-export type UtentiUpdateToOneWithWhereWithoutSottoscriveInput = {
+export type UtentiUpdateToOneWithWhereWithoutSottoscrizioniInput = {
   where?: Prisma.UtentiWhereInput
-  data: Prisma.XOR<Prisma.UtentiUpdateWithoutSottoscriveInput, Prisma.UtentiUncheckedUpdateWithoutSottoscriveInput>
+  data: Prisma.XOR<Prisma.UtentiUpdateWithoutSottoscrizioniInput, Prisma.UtentiUncheckedUpdateWithoutSottoscrizioniInput>
 }
 
-export type UtentiUpdateWithoutSottoscriveInput = {
+export type UtentiUpdateWithoutSottoscrizioniInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   cognome?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
@@ -536,7 +536,7 @@ export type UtentiUpdateWithoutSottoscriveInput = {
   profili?: Prisma.ProfiliUpdateManyWithoutUtenteNestedInput
 }
 
-export type UtentiUncheckedUpdateWithoutSottoscriveInput = {
+export type UtentiUncheckedUpdateWithoutSottoscrizioniInput = {
   id_utente?: Prisma.IntFieldUpdateOperationsInput | number
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   cognome?: Prisma.StringFieldUpdateOperationsInput | string
@@ -553,12 +553,12 @@ export type UtentiUncheckedUpdateWithoutSottoscriveInput = {
 
 export type UtentiCountOutputType = {
   profili: number
-  sottoscrive: number
+  sottoscrizioni: number
 }
 
 export type UtentiCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profili?: boolean | UtentiCountOutputTypeCountProfiliArgs
-  sottoscrive?: boolean | UtentiCountOutputTypeCountSottoscriveArgs
+  sottoscrizioni?: boolean | UtentiCountOutputTypeCountSottoscrizioniArgs
 }
 
 /**
@@ -581,8 +581,8 @@ export type UtentiCountOutputTypeCountProfiliArgs<ExtArgs extends runtime.Types.
 /**
  * UtentiCountOutputType without action
  */
-export type UtentiCountOutputTypeCountSottoscriveArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.SottoscriveWhereInput
+export type UtentiCountOutputTypeCountSottoscrizioniArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SottoscrizioniWhereInput
 }
 
 
@@ -594,7 +594,7 @@ export type UtentiSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   data_nascita?: boolean
   password?: boolean
   profili?: boolean | Prisma.Utenti$profiliArgs<ExtArgs>
-  sottoscrive?: boolean | Prisma.Utenti$sottoscriveArgs<ExtArgs>
+  sottoscrizioni?: boolean | Prisma.Utenti$sottoscrizioniArgs<ExtArgs>
   _count?: boolean | Prisma.UtentiCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["utenti"]>
 
@@ -612,7 +612,7 @@ export type UtentiSelectScalar = {
 export type UtentiOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id_utente" | "nome" | "cognome" | "email" | "data_nascita" | "password", ExtArgs["result"]["utenti"]>
 export type UtentiInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   profili?: boolean | Prisma.Utenti$profiliArgs<ExtArgs>
-  sottoscrive?: boolean | Prisma.Utenti$sottoscriveArgs<ExtArgs>
+  sottoscrizioni?: boolean | Prisma.Utenti$sottoscrizioniArgs<ExtArgs>
   _count?: boolean | Prisma.UtentiCountOutputTypeDefaultArgs<ExtArgs>
 }
 
@@ -620,7 +620,7 @@ export type $UtentiPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
   name: "Utenti"
   objects: {
     profili: Prisma.$ProfiliPayload<ExtArgs>[]
-    sottoscrive: Prisma.$SottoscrivePayload<ExtArgs>[]
+    sottoscrizioni: Prisma.$SottoscrizioniPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id_utente: number
@@ -970,7 +970,7 @@ readonly fields: UtentiFieldRefs;
 export interface Prisma__UtentiClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   profili<T extends Prisma.Utenti$profiliArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Utenti$profiliArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProfiliPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  sottoscrive<T extends Prisma.Utenti$sottoscriveArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Utenti$sottoscriveArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SottoscrivePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sottoscrizioni<T extends Prisma.Utenti$sottoscrizioniArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Utenti$sottoscrizioniArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SottoscrizioniPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1373,27 +1373,27 @@ export type Utenti$profiliArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * Utenti.sottoscrive
+ * Utenti.sottoscrizioni
  */
-export type Utenti$sottoscriveArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Utenti$sottoscrizioniArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Sottoscrive
+   * Select specific fields to fetch from the Sottoscrizioni
    */
-  select?: Prisma.SottoscriveSelect<ExtArgs> | null
+  select?: Prisma.SottoscrizioniSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Sottoscrive
+   * Omit specific fields from the Sottoscrizioni
    */
-  omit?: Prisma.SottoscriveOmit<ExtArgs> | null
+  omit?: Prisma.SottoscrizioniOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SottoscriveInclude<ExtArgs> | null
-  where?: Prisma.SottoscriveWhereInput
-  orderBy?: Prisma.SottoscriveOrderByWithRelationInput | Prisma.SottoscriveOrderByWithRelationInput[]
-  cursor?: Prisma.SottoscriveWhereUniqueInput
+  include?: Prisma.SottoscrizioniInclude<ExtArgs> | null
+  where?: Prisma.SottoscrizioniWhereInput
+  orderBy?: Prisma.SottoscrizioniOrderByWithRelationInput | Prisma.SottoscrizioniOrderByWithRelationInput[]
+  cursor?: Prisma.SottoscrizioniWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.SottoscriveScalarFieldEnum | Prisma.SottoscriveScalarFieldEnum[]
+  distinct?: Prisma.SottoscrizioniScalarFieldEnum | Prisma.SottoscrizioniScalarFieldEnum[]
 }
 
 /**

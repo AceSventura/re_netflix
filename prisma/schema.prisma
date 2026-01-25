@@ -15,7 +15,7 @@ model Utenti {
   data_nascita DateTime      @db.Date
   password     String        @db.VarChar(255)
   profili      Profili[]
-  sottoscrive  Sottoscrive[]
+  sottoscrizioni  Sottoscrizioni[]
 }
 
 model Profili {
@@ -39,21 +39,7 @@ model Abbonamenti {
   id_abbonamento Int           @id @default(autoincrement())
   piano          String        @db.VarChar(50)
   costo_mensile  Decimal       @db.Decimal(6, 2)
-  sottoscrive    Sottoscrive[]
-}
-
-model Sottoscrizioni {
-  id_sottoscrizione          Int         @id @default(autoincrement())
-  data_inizio_sottoscrizione DateTime    @db.Date
-  data_scadenza              DateTime    @db.Date
-  id_utente                  Int
-  id_abbonamento             Int
-  id_fattura                 Int
-  utente                     Utenti      @relation(fields: [id_utente], references: [id_utente], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_1")
-  abbonamento                Abbonamenti @relation(fields: [id_abbonamento], references: [id_abbonamento], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_2")
-  fattura                    Fatture     @relation(fields: [id_fattura], references:[id_fattura], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_3")
-
-  @@index([id_abbonamento], map: "id_abbonamento")
+  sottoscrizioni    Sottoscrizioni[]
 }
 
 model Fatture {
@@ -65,9 +51,26 @@ model Fatture {
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
+  sottoscrizioni Sottoscrizioni[]
   @@map("Fatture")
 }
 
+model Sottoscrizioni {
+  id_sottoscrizione          Int         @id @default(autoincrement())
+  data_inizio_sottoscrizione DateTime    @db.Date
+  data_scadenza              DateTime    @db.Date
+  id_utente                  Int
+  id_abbonamento             Int
+  id_fattura                 Int
+  
+  utente                     Utenti      @relation(fields: [id_utente], references: [id_utente], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_1")
+  
+  abbonamento                Abbonamenti @relation(fields: [id_abbonamento], references: [id_abbonamento], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_2")
+  
+  fattura                    Fatture     @relation(fields: [id_fattura], references:[id_fattura], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_3")
+
+  @@index([id_abbonamento], map: "id_abbonamento")
+}
 
 model Serie_tv {
   id_serie_tv     Int           @id @default(autoincrement())

@@ -33,10 +33,15 @@ export type Profili = Prisma.ProfiliModel
  */
 export type Abbonamenti = Prisma.AbbonamentiModel
 /**
- * Model Sottoscrive
+ * Model Fatture
  * 
  */
-export type Sottoscrive = Prisma.SottoscriveModel
+export type Fatture = Prisma.FattureModel
+/**
+ * Model Sottoscrizioni
+ * 
+ */
+export type Sottoscrizioni = Prisma.SottoscrizioniModel
 /**
  * Model Serie_tv
  * 

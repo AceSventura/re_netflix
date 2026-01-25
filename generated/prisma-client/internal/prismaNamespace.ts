@@ -387,7 +387,8 @@ export const ModelName = {
   Utenti: 'Utenti',
   Profili: 'Profili',
   Abbonamenti: 'Abbonamenti',
-  Sottoscrive: 'Sottoscrive',
+  Fatture: 'Fatture',
+  Sottoscrizioni: 'Sottoscrizioni',
   Serie_tv: 'Serie_tv',
   Stagioni: 'Stagioni',
   Contenuti: 'Contenuti',
@@ -425,7 +426,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "utenti" | "profili" | "abbonamenti" | "sottoscrive" | "serie_tv" | "stagioni" | "contenuti" | "valutazioni" | "guarda" | "generi" | "classificato_in" | "assets_video" | "codificato" | "assets_audio" | "include" | "lingue" | "parlato_in" | "sottotitoli" | "tradotto_in" | "salva_film" | "salva_serie" | "artisti" | "partecipa" | "licenze" | "soggetto_a" | "liste"
+    modelProps: "utenti" | "profili" | "abbonamenti" | "fatture" | "sottoscrizioni" | "serie_tv" | "stagioni" | "contenuti" | "valutazioni" | "guarda" | "generi" | "classificato_in" | "assets_video" | "codificato" | "assets_audio" | "include" | "lingue" | "parlato_in" | "sottotitoli" | "tradotto_in" | "salva_film" | "salva_serie" | "artisti" | "partecipa" | "licenze" | "soggetto_a" | "liste"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -627,69 +628,135 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    Sottoscrive: {
-      payload: Prisma.$SottoscrivePayload<ExtArgs>
-      fields: Prisma.SottoscriveFieldRefs
+    Fatture: {
+      payload: Prisma.$FatturePayload<ExtArgs>
+      fields: Prisma.FattureFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.SottoscriveFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrivePayload> | null
+          args: Prisma.FattureFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FatturePayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.SottoscriveFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrivePayload>
+          args: Prisma.FattureFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FatturePayload>
         }
         findFirst: {
-          args: Prisma.SottoscriveFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrivePayload> | null
+          args: Prisma.FattureFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FatturePayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.SottoscriveFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrivePayload>
+          args: Prisma.FattureFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FatturePayload>
         }
         findMany: {
-          args: Prisma.SottoscriveFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrivePayload>[]
+          args: Prisma.FattureFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FatturePayload>[]
         }
         create: {
-          args: Prisma.SottoscriveCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrivePayload>
+          args: Prisma.FattureCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FatturePayload>
         }
         createMany: {
-          args: Prisma.SottoscriveCreateManyArgs<ExtArgs>
+          args: Prisma.FattureCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         delete: {
-          args: Prisma.SottoscriveDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrivePayload>
+          args: Prisma.FattureDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FatturePayload>
         }
         update: {
-          args: Prisma.SottoscriveUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrivePayload>
+          args: Prisma.FattureUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FatturePayload>
         }
         deleteMany: {
-          args: Prisma.SottoscriveDeleteManyArgs<ExtArgs>
+          args: Prisma.FattureDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.SottoscriveUpdateManyArgs<ExtArgs>
+          args: Prisma.FattureUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         upsert: {
-          args: Prisma.SottoscriveUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrivePayload>
+          args: Prisma.FattureUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$FatturePayload>
         }
         aggregate: {
-          args: Prisma.SottoscriveAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateSottoscrive>
+          args: Prisma.FattureAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateFatture>
         }
         groupBy: {
-          args: Prisma.SottoscriveGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.SottoscriveGroupByOutputType>[]
+          args: Prisma.FattureGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FattureGroupByOutputType>[]
         }
         count: {
-          args: Prisma.SottoscriveCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.SottoscriveCountAggregateOutputType> | number
+          args: Prisma.FattureCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.FattureCountAggregateOutputType> | number
+        }
+      }
+    }
+    Sottoscrizioni: {
+      payload: Prisma.$SottoscrizioniPayload<ExtArgs>
+      fields: Prisma.SottoscrizioniFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SottoscrizioniFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrizioniPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SottoscrizioniFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrizioniPayload>
+        }
+        findFirst: {
+          args: Prisma.SottoscrizioniFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrizioniPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SottoscrizioniFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrizioniPayload>
+        }
+        findMany: {
+          args: Prisma.SottoscrizioniFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrizioniPayload>[]
+        }
+        create: {
+          args: Prisma.SottoscrizioniCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrizioniPayload>
+        }
+        createMany: {
+          args: Prisma.SottoscrizioniCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.SottoscrizioniDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrizioniPayload>
+        }
+        update: {
+          args: Prisma.SottoscrizioniUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrizioniPayload>
+        }
+        deleteMany: {
+          args: Prisma.SottoscrizioniDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SottoscrizioniUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.SottoscrizioniUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SottoscrizioniPayload>
+        }
+        aggregate: {
+          args: Prisma.SottoscrizioniAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSottoscrizioni>
+        }
+        groupBy: {
+          args: Prisma.SottoscrizioniGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SottoscrizioniGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SottoscrizioniCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SottoscrizioniCountAggregateOutputType> | number
         }
       }
     }
@@ -2217,14 +2284,28 @@ export const AbbonamentiScalarFieldEnum = {
 export type AbbonamentiScalarFieldEnum = (typeof AbbonamentiScalarFieldEnum)[keyof typeof AbbonamentiScalarFieldEnum]
 
 
-export const SottoscriveScalarFieldEnum = {
+export const FattureScalarFieldEnum = {
+  id_fattura: 'id_fattura',
+  importo: 'importo',
+  file: 'file',
+  data_emissione: 'data_emissione',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type FattureScalarFieldEnum = (typeof FattureScalarFieldEnum)[keyof typeof FattureScalarFieldEnum]
+
+
+export const SottoscrizioniScalarFieldEnum = {
+  id_sottoscrizione: 'id_sottoscrizione',
   data_inizio_sottoscrizione: 'data_inizio_sottoscrizione',
   data_scadenza: 'data_scadenza',
   id_utente: 'id_utente',
-  id_abbonamento: 'id_abbonamento'
+  id_abbonamento: 'id_abbonamento',
+  id_fattura: 'id_fattura'
 } as const
 
-export type SottoscriveScalarFieldEnum = (typeof SottoscriveScalarFieldEnum)[keyof typeof SottoscriveScalarFieldEnum]
+export type SottoscrizioniScalarFieldEnum = (typeof SottoscrizioniScalarFieldEnum)[keyof typeof SottoscrizioniScalarFieldEnum]
 
 
 export const Serie_tvScalarFieldEnum = {
@@ -2464,6 +2545,13 @@ export const AbbonamentiOrderByRelevanceFieldEnum = {
 } as const
 
 export type AbbonamentiOrderByRelevanceFieldEnum = (typeof AbbonamentiOrderByRelevanceFieldEnum)[keyof typeof AbbonamentiOrderByRelevanceFieldEnum]
+
+
+export const FattureOrderByRelevanceFieldEnum = {
+  file: 'file'
+} as const
+
+export type FattureOrderByRelevanceFieldEnum = (typeof FattureOrderByRelevanceFieldEnum)[keyof typeof FattureOrderByRelevanceFieldEnum]
 
 
 export const Serie_tvOrderByRelevanceFieldEnum = {
@@ -2707,7 +2795,8 @@ export type GlobalOmitConfig = {
   utenti?: Prisma.UtentiOmit
   profili?: Prisma.ProfiliOmit
   abbonamenti?: Prisma.AbbonamentiOmit
-  sottoscrive?: Prisma.SottoscriveOmit
+  fatture?: Prisma.FattureOmit
+  sottoscrizioni?: Prisma.SottoscrizioniOmit
   serie_tv?: Prisma.Serie_tvOmit
   stagioni?: Prisma.StagioniOmit
   contenuti?: Prisma.ContenutiOmit
