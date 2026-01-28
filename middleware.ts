@@ -16,6 +16,7 @@ export function middleware(request: NextRequest) {
     // 3. LOGICA DI PROTEZIONE
 
     // Se l'utente NON è loggato e tenta di accedere a una pagina protetta
+    /*
     if (!isLoggedIn && pathname !== '/login') {
         console.log("Middleware -> Log in ");
         return NextResponse.redirect(new URL('/login', request.url));
@@ -30,8 +31,9 @@ export function middleware(request: NextRequest) {
     if (isLoggedIn && pathname === '/') {
         return NextResponse.redirect(new URL('/browse', request.url));
     }
-
+*/
     return NextResponse.next();
+
 }
 
 // 4. CONFIGURAZIONE MATCHER

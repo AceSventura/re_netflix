@@ -25,7 +25,6 @@ export default function LoginPage() {
 
     return (
         <div className="relative h-screen w-full bg-[url('https://assets.nflxext.com/...')] bg-cover">
-            <div className="absolute inset-0 bg-black/50" />
             <div className="relative z-10 flex items-center justify-center h-full">
                 <form onSubmit={handleLogin} className="bg-black/75 p-16 w-full max-w-md rounded-md">
                     <h2 className="text-white text-4xl mb-8 font-semibold">Accedi</h2>

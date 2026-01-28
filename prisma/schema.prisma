@@ -1,0 +1,313 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Utenti {
+  id_utente    Int           @id @default(autoincrement())
+  nome         String        @db.VarChar(100)
+  cognome      String        @db.VarChar(100)
+  email        String        @unique(map: "email") @db.VarChar(150)
+  data_nascita DateTime      @db.Date
+  password     String        @db.VarChar(255)
+  profili      Profili[]
+  sottoscrizioni  Sottoscrizioni[]
+}
+
+model Profili {
+  id_profilo   Int           @id @default(autoincrement())
+  pin_profilo  String?       @db.VarChar(10)
+  lingua       String?       @db.VarChar(50)
+  nome_profilo String        @db.VarChar(100)
+  avatar_url   String?       @db.Text
+  id_utente    Int
+  guarda       Guarda[]
+  Liste        Liste[]
+  utente       Utenti        @relation(fields: [id_utente], references: [id_utente], onDelete: NoAction, onUpdate: NoAction, map: "profili_ibfk_1")
+  salva_film   Salva_film[]
+  salva_serie  Salva_serie[]
+  valutazioni  Valutazioni[]
+
+  @@index([id_utente], map: "id_utente")
+}
+
+model Abbonamenti {
+  id_abbonamento Int           @id @default(autoincrement())
+  piano          String        @db.VarChar(50)
+  costo_mensile  Decimal       @db.Decimal(6, 2)
+  sottoscrizioni    Sottoscrizioni[]
+}
+
+model Fatture {
+  id_fattura     Int      @id @default(autoincrement())
+  importo        Decimal  @db.Decimal(10, 2)
+  file           String   @db.VarChar(2048)
+  data_emissione DateTime @db.Date
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  sottoscrizioni Sottoscrizioni[]
+  @@map("Fatture")
+}
+
+model Sottoscrizioni {
+  id_sottoscrizione          Int         @id @default(autoincrement())
+  data_inizio_sottoscrizione DateTime    @db.Date
+  data_scadenza              DateTime    @db.Date
+  id_utente                  Int
+  id_abbonamento             Int
+  id_fattura                 Int
+  
+  utente                     Utenti      @relation(fields: [id_utente], references: [id_utente], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_1")
+  
+  abbonamento                Abbonamenti @relation(fields: [id_abbonamento], references: [id_abbonamento], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_2")
+  
+  fattura                    Fatture     @relation(fields: [id_fattura], references:[id_fattura], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_3")
+
+  @@index([id_abbonamento], map: "id_abbonamento")
+}
+
+model Serie_tv {
+  id_serie_tv     Int           @id @default(autoincrement())
+  titolo_serie_tv String        @db.VarChar(150)
+  salva_serie     Salva_serie[]
+  stagioni        Stagioni[]
+  valutazioni     Valutazioni[]
+}
+
+model Stagioni {
+  id_stagione     Int         @id @default(autoincrement())
+  titolo_stagione String?     @db.VarChar(150)
+  numero_stagione Int
+  id_serie_tv     Int
+  contenuti       Contenuti[]
+  serie_tv        Serie_tv    @relation(fields: [id_serie_tv], references: [id_serie_tv], onDelete: NoAction, onUpdate: NoAction, map: "stagioni_ibfk_1")
+
+  @@index([id_serie_tv], map: "id_serie_tv")
+}
+
+model Contenuti {
+  id_contenuto     Int               @id @default(autoincrement())
+  descrizione      String?           @db.Text
+  anno_rilascio    Int?
+  durata           Int?
+  titolo_contenuto String            @db.VarChar(150)
+  tipo             TipoContenuto
+  id_stagione      Int?
+  classificazioni  Classificato_in[]
+  codifiche        Codificato[]
+  stagione         Stagioni?         @relation(fields: [id_stagione], references: [id_stagione], onDelete: NoAction, onUpdate: NoAction, map: "contenuti_ibfk_1")
+  guarda           Guarda[]
+  include_audio    Include[]
+  Liste            Liste[]
+  partecipa        Partecipa[]
+  salva_film       Salva_film[]
+  soggetto_a       Soggetto_a[]
+  sottotitoli      Sottotitoli[]
+  valutazioni      Valutazioni[]
+
+  @@index([id_stagione], map: "id_stagione")
+}
+
+model Valutazioni {
+  id_valutazione Int                   @id @default(autoincrement())
+  punteggio      Valutazioni_punteggio
+  id_profilo     Int
+  id_serie_tv    Int?
+  id_film        Int?
+  profilo        Profili               @relation(fields: [id_profilo], references: [id_profilo], onDelete: NoAction, onUpdate: NoAction, map: "valutazioni_ibfk_1")
+  serie_tv       Serie_tv?             @relation(fields: [id_serie_tv], references: [id_serie_tv], onDelete: NoAction, onUpdate: NoAction, map: "valutazioni_ibfk_2")
+  film           Contenuti?            @relation(fields: [id_film], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction, map: "valutazioni_ibfk_3")
+
+  @@index([id_film], map: "id_film")
+  @@index([id_profilo], map: "id_profilo")
+  @@index([id_serie_tv], map: "id_serie_tv")
+}
+
+model Guarda {
+  durata_visualizzata Int?
+  stato_completamento Boolean?
+  id_contenuto        Int
+  id_profilo          Int
+  contenuto           Contenuti @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction, map: "guarda_ibfk_1")
+  profilo             Profili   @relation(fields: [id_profilo], references: [id_profilo], onDelete: NoAction, onUpdate: NoAction, map: "guarda_ibfk_2")
+
+  @@id([id_contenuto, id_profilo])
+  @@index([id_profilo], map: "id_profilo")
+}
+
+model Generi {
+  id_genere   Int               @id @default(autoincrement())
+  nome_genere String            @db.VarChar(100)
+  contenuti   Classificato_in[]
+}
+
+model Classificato_in {
+  id_genere    Int
+  id_contenuto Int
+  genere       Generi    @relation(fields: [id_genere], references: [id_genere], onDelete: NoAction, onUpdate: NoAction, map: "classificato_in_ibfk_1")
+  contenuto    Contenuti @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction, map: "classificato_in_ibfk_2")
+
+  @@id([id_genere, id_contenuto])
+  @@index([id_contenuto], map: "id_contenuto")
+}
+
+model Assets_video {
+  id_asset_video Int          @id @default(autoincrement())
+  bitrate        Int?
+  codec          String?      @db.VarChar(50)
+  url_manifest   String       @db.Text
+  codificato     Codificato[]
+}
+
+model Codificato {
+  id_asset_video Int
+  id_contenuto   Int
+  asset_video    Assets_video @relation(fields: [id_asset_video], references: [id_asset_video], onDelete: NoAction, onUpdate: NoAction, map: "codificato_ibfk_1")
+  contenuto      Contenuti    @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction, map: "codificato_ibfk_2")
+
+  @@id([id_asset_video, id_contenuto])
+  @@index([id_contenuto], map: "id_contenuto")
+}
+
+model Assets_audio {
+  id_asset_audio Int          @id @default(autoincrement())
+  codec          String?      @db.VarChar(50)
+  url_traccia    String       @db.Text
+  include        Include[]
+  parlato_in     Parlato_in[]
+}
+
+model Include {
+  id_asset_audio Int
+  id_contenuto   Int
+  asset_audio    Assets_audio @relation(fields: [id_asset_audio], references: [id_asset_audio], onDelete: NoAction, onUpdate: NoAction, map: "include_ibfk_1")
+  contenuto      Contenuti    @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction, map: "include_ibfk_2")
+
+  @@id([id_asset_audio, id_contenuto])
+  @@index([id_contenuto], map: "id_contenuto")
+}
+
+model Lingue {
+  id_lingua   Int           @id @default(autoincrement())
+  nome        String        @db.VarChar(50)
+  parlato_in  Parlato_in[]
+  tradotto_in Tradotto_in[]
+}
+
+model Parlato_in {
+  id_lingua      Int
+  id_asset_audio Int
+  lingua         Lingue       @relation(fields: [id_lingua], references: [id_lingua], onDelete: NoAction, onUpdate: NoAction, map: "parlato_in_ibfk_1")
+  asset_audio    Assets_audio @relation(fields: [id_asset_audio], references: [id_asset_audio], onDelete: NoAction, onUpdate: NoAction, map: "parlato_in_ibfk_2")
+
+  @@id([id_lingua, id_asset_audio])
+  @@index([id_asset_audio], map: "id_asset_audio")
+}
+
+model Sottotitoli {
+  id_sub       Int           @id @default(autoincrement())
+  url_sub      String        @db.Text
+  formato      String?       @db.VarChar(20)
+  tipo_traccia TipoTraccia?
+  id_contenuto Int
+  contenuto    Contenuti     @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction, map: "sottotitoli_ibfk_1")
+  tradotto_in  Tradotto_in[]
+
+  @@index([id_contenuto], map: "id_contenuto")
+}
+
+model Tradotto_in {
+  id_lingua Int
+  id_sub    Int
+  lingua    Lingue      @relation(fields: [id_lingua], references: [id_lingua], onDelete: NoAction, onUpdate: NoAction, map: "tradotto_in_ibfk_1")
+  sub       Sottotitoli @relation(fields: [id_sub], references: [id_sub], onDelete: NoAction, onUpdate: NoAction, map: "tradotto_in_ibfk_2")
+
+  @@id([id_lingua, id_sub])
+  @@index([id_sub], map: "id_sub")
+}
+
+model Salva_film {
+  id_film    Int
+  id_profilo Int
+  film       Contenuti @relation(fields: [id_film], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction, map: "salva_film_ibfk_1")
+  profilo    Profili   @relation(fields: [id_profilo], references: [id_profilo], onDelete: NoAction, onUpdate: NoAction, map: "salva_film_ibfk_2")
+
+  @@id([id_film, id_profilo])
+  @@index([id_profilo], map: "id_profilo")
+}
+
+model Salva_serie {
+  id_serie_tv Int
+  id_profilo  Int
+  serie_tv    Serie_tv @relation(fields: [id_serie_tv], references: [id_serie_tv], onDelete: NoAction, onUpdate: NoAction, map: "salva_serie_ibfk_1")
+  profilo     Profili  @relation(fields: [id_profilo], references: [id_profilo], onDelete: NoAction, onUpdate: NoAction, map: "salva_serie_ibfk_2")
+
+  @@id([id_serie_tv, id_profilo])
+  @@index([id_profilo], map: "id_profilo")
+}
+
+model Artisti {
+  id_artista Int         @id @default(autoincrement())
+  nome       String      @db.VarChar(150)
+  partecipa  Partecipa[]
+}
+
+model Partecipa {
+  id_artista   Int
+  id_contenuto Int
+  artista      Artisti   @relation(fields: [id_artista], references: [id_artista], onDelete: NoAction, onUpdate: NoAction, map: "partecipa_ibfk_1")
+  contenuto    Contenuti @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction, map: "partecipa_ibfk_2")
+
+  @@id([id_artista, id_contenuto])
+  @@index([id_contenuto], map: "id_contenuto")
+}
+
+model Licenze {
+  id_licenza    Int          @id @default(autoincrement())
+  tipo_licenza  String?      @db.VarChar(50)
+  data_scadenza DateTime?    @db.Date
+  territorio    String?      @db.VarChar(100)
+  soggetto_a    Soggetto_a[]
+}
+
+model Soggetto_a {
+  id_licenza   Int
+  id_contenuto Int
+  licenza      Licenze   @relation(fields: [id_licenza], references: [id_licenza], onDelete: NoAction, onUpdate: NoAction, map: "soggetto_a_ibfk_1")
+  contenuto    Contenuti @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction, map: "soggetto_a_ibfk_2")
+
+  @@id([id_licenza, id_contenuto])
+  @@index([id_contenuto], map: "id_contenuto")
+}
+
+model Liste {
+  id_profilo   Int
+  id_contenuto Int
+  Profili      Profili   @relation(fields: [id_profilo], references: [id_profilo], onDelete: NoAction, onUpdate: NoAction, map: "liste_ibfk_1")
+  Contenuti    Contenuti @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction, map: "liste_ibfk_2")
+
+  @@id([id_profilo, id_contenuto])
+  @@index([id_contenuto], map: "id_contenuto")
+}
+
+enum TipoContenuto {
+  episodio
+  film
+}
+
+enum TipoTraccia {
+  forzata
+  completa
+}
+
+enum Valutazioni_punteggio {
+  non_fa_per_me @map("Non fa per me")
+  mi_piace      @map("Mi piace")
+  adoro         @map("Adoro!")
+}

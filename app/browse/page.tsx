@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import Cookies from 'js-cookie';
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useProfiles } from "@/context/ProfileContext"; // Importa il context
 
-import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import MovieRow from "@/components/MovieRow";
-import Profiles from "@/components/Profiles";
-import MovieDetailModal from "@/components/MovieDetailModal";
+import Navbar from "@/components/browse/Navbar";
+import Hero from "@/components/browse/Hero";
+import MovieRow from "@/components/browse/MovieRow";
+import Profiles from "@/components/browse/Profiles";
+import MovieDetailModal from "@/components/browse/MovieDetailModal";
+import Footer from "@/components/browse/Footer";
 
 const movies = [
     { id: "1", title: "KPop Demon Hunters", poster: "/images/movie1.jpg" },
@@ -23,7 +24,7 @@ const movies = [
  * Componente per il catalogo principale.
  * Gestisce la visualizzazione dei film e l'apertura del modal tramite URL.
  */
-function BrowseContent({ selectedProfile }: { selectedProfile: string }) {
+const BrowseContent = () => {
     const searchParams = useSearchParams();
     const selectedMovieId = searchParams.get("movie");
 
@@ -35,6 +36,7 @@ function BrowseContent({ selectedProfile }: { selectedProfile: string }) {
                 <main className="p-6 md:p-12 space-y-12">
                     <MovieRow title="Popolari" movies={movies} />
                 </main>
+                <Footer/>
             </div>
             {selectedMovieId && <MovieDetailModal id={selectedMovieId} />}
         </div>
@@ -42,30 +44,19 @@ function BrowseContent({ selectedProfile }: { selectedProfile: string }) {
 }
 
 export default function Home() {
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-    const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
-    const router = useRouter();
+    const { selectedProfile, isLoading } = useProfiles(); // Leggiamo dal Context
 
-    useEffect(() => {
-        const auth = Cookies.get('isLoggedIn');
-        if (!auth) {
-            router.push('/login');
-        } else {
-            setIsAuthenticated(true);
-        }
-    }, [router]);
+    if (isLoading) return <div className="bg-[#141414] h-screen" />;
 
-    // Mentre controlla l'autenticazione, mostriamo uno sfondo nero
-    if (isAuthenticated === null) return <div className="bg-[#141414] h-screen" />;
-
-    // Se loggato ma non ha scelto il profilo
+    // Se non c'è un profilo selezionato nel Context, mostriamo la griglia di selezione
     if (!selectedProfile) {
-        return <Profiles onSelect={(name) => setSelectedProfile(name)} />;
+        return <Profiles />;
     }
 
+    // Se il profilo c'è, mostriamo il catalogo
     return (
         <Suspense fallback={<div className="bg-[#141414] h-screen" />}>
-            <BrowseContent selectedProfile={selectedProfile} />
+            <BrowseContent />
         </Suspense>
     );
 }
