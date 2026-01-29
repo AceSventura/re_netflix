@@ -17,31 +17,29 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="w-full bg-[#f3f3f3] text-[#737373] py-8 border-t border-gray-200">
-      {/* Container principale con la stessa larghezza della pagina Account */}
-      <div className="max-w-[1024px] mx-auto px-4 sm:px-8">
+    <footer className="w-full bg-[#f3f3f3] text-[#737373] py-12 border-t border-gray-200">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8">
         
-        {/* Intestazione: Domande? Contattaci */}
+        {/* Intestazione con sottolineatura fissa */}
         <div className="mb-8">
           <p className="text-[16px]">
             Domande?{" "}
-            <Link href="https://help.netflix.com/contactus" className="hover:underline">
+            <Link 
+              href="https://help.netflix.com/contactus" 
+              className="underline hover:text-black transition-colors"
+            >
               Contattaci
             </Link>
           </p>
         </div>
 
-        {/* Griglia Link: 
-            - 2 colonne su mobile (xs/s)
-            - 4 colonne su desktop (m/l/xl)
-            Proprio come definito nel tuo codice sorgente
-        */}
+        {/* Griglia Link - 'underline' rende la linea sempre visibile */}
         <ul className="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-3">
           {links.map((link, index) => (
             <li key={index} className="list-none">
               <Link 
                 href={link.href} 
-                className="text-[13px] hover:underline leading-none"
+                className="text-[13px] underline hover:text-black leading-none inline-block text-[#737373]"
               >
                 {link.label}
               </Link>
@@ -49,10 +47,7 @@ const Footer = () => {
           ))}
         </ul>
 
-        {/* Spazio per eventuali selettori di lingua o copyright */}
-        <div className="mt-8 h-10">
-            {/* Codice di servizio / Copyright se necessario */}
-        </div>
+        
       </div>
     </footer>
   );
