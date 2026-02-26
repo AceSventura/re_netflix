@@ -6,7 +6,7 @@
 /*
  * This file exports the `Fatture` model and its related types.
  *
- * 🟢 You can import this file directly.
+ *  You can import this file directly.
  */
 import type * as runtime from "@prisma/client/runtime/client"
 import type * as $Enums from "../enums"
@@ -345,11 +345,14 @@ export type FattureUncheckedUpdateManyInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+<<<<<<< HEAD:generated/prisma/models/Fatture.ts
 export type FattureScalarRelationFilter = {
   is?: Prisma.FattureWhereInput
   isNot?: Prisma.FattureWhereInput
 }
 
+=======
+>>>>>>> c74031441a9f19d27464de5884109d148f7773ec:generated/prisma-client/models/Fatture.ts
 export type FattureOrderByRelevanceInput = {
   fields: Prisma.FattureOrderByRelevanceFieldEnum | Prisma.FattureOrderByRelevanceFieldEnum[]
   sort: Prisma.SortOrder
@@ -393,6 +396,14 @@ export type FattureSumOrderByAggregateInput = {
   importo?: Prisma.SortOrder
 }
 
+<<<<<<< HEAD:generated/prisma/models/Fatture.ts
+=======
+export type FattureScalarRelationFilter = {
+  is?: Prisma.FattureWhereInput
+  isNot?: Prisma.FattureWhereInput
+}
+
+>>>>>>> c74031441a9f19d27464de5884109d148f7773ec:generated/prisma-client/models/Fatture.ts
 export type FattureCreateNestedOneWithoutSottoscrizioniInput = {
   create?: Prisma.XOR<Prisma.FattureCreateWithoutSottoscrizioniInput, Prisma.FattureUncheckedCreateWithoutSottoscrizioniInput>
   connectOrCreate?: Prisma.FattureCreateOrConnectWithoutSottoscrizioniInput

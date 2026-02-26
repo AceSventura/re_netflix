@@ -16,6 +16,7 @@ model Utenti {
   password     String        @db.VarChar(255)
   profili      Profili[]
   sottoscrizioni  Sottoscrizioni[]
+  sottoscrizioni  Sottoscrizioni[]
 }
 
 model Profili {
@@ -49,8 +50,11 @@ model Sottoscrizioni {
   id_utente                  Int
   id_abbonamento             Int
   id_fattura                 Int
+  
   utente                     Utenti      @relation(fields: [id_utente], references: [id_utente], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_1")
+  
   abbonamento                Abbonamenti @relation(fields: [id_abbonamento], references: [id_abbonamento], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_2")
+  
   fattura                    Fatture     @relation(fields: [id_fattura], references:[id_fattura], onDelete: NoAction, onUpdate: NoAction, map: "sottoscrizioni_ibfk_3")
 
   @@index([id_abbonamento], map: "id_abbonamento")
