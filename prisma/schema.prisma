@@ -16,7 +16,6 @@ model Utenti {
   password     String        @db.VarChar(255)
   profili      Profili[]
   sottoscrizioni  Sottoscrizioni[]
-  sottoscrizioni  Sottoscrizioni[]
 }
 
 model Profili {

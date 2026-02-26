@@ -2291,8 +2291,6 @@ export const SottoscrizioniScalarFieldEnum = {
   id_utente: 'id_utente',
   id_abbonamento: 'id_abbonamento',
   id_fattura: 'id_fattura'
-  id_abbonamento: 'id_abbonamento',
-  id_fattura: 'id_fattura'
 } as const
 
 export type SottoscrizioniScalarFieldEnum = (typeof SottoscrizioniScalarFieldEnum)[keyof typeof SottoscrizioniScalarFieldEnum]
@@ -2547,13 +2545,6 @@ export const AbbonamentiOrderByRelevanceFieldEnum = {
 } as const
 
 export type AbbonamentiOrderByRelevanceFieldEnum = (typeof AbbonamentiOrderByRelevanceFieldEnum)[keyof typeof AbbonamentiOrderByRelevanceFieldEnum]
-
-
-export const FattureOrderByRelevanceFieldEnum = {
-  file: 'file'
-} as const
-
-export type FattureOrderByRelevanceFieldEnum = (typeof FattureOrderByRelevanceFieldEnum)[keyof typeof FattureOrderByRelevanceFieldEnum]
 
 
 export const FattureOrderByRelevanceFieldEnum = {

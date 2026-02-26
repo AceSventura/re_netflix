@@ -399,13 +399,6 @@ export const FattureOrderByRelevanceFieldEnum = {
 export type FattureOrderByRelevanceFieldEnum = (typeof FattureOrderByRelevanceFieldEnum)[keyof typeof FattureOrderByRelevanceFieldEnum]
 
 
-export const FattureOrderByRelevanceFieldEnum = {
-  file: 'file'
-} as const
-
-export type FattureOrderByRelevanceFieldEnum = (typeof FattureOrderByRelevanceFieldEnum)[keyof typeof FattureOrderByRelevanceFieldEnum]
-
-
 export const Serie_tvOrderByRelevanceFieldEnum = {
   titolo_serie_tv: 'titolo_serie_tv'
 } as const
