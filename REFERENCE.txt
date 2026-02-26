@@ -1,0 +1,101 @@
+📌 **REFERENZA VELOCE - Netflix Clone Streaming**
+
+---
+
+## 📂 CARICA I FILE QUI:
+
+```
+public/videos/      ← .mp4 video files
+public/audio/       ← .m4a/.mp3 audio files
+public/subtitles/   ← .vtt/.srt subtitle files
+```
+
+---
+
+## 💾 SETUP DATABASE (1 comando):
+
+```bash
+mysql -u root -p Netflix < data/seed_data.sql
+```
+
+---
+
+## 🌐 TEST ENDPOINTS:
+
+```bash
+# GET contenuto
+curl http://localhost:3000/api/watch/1
+
+# POST progresso
+curl -X POST http://localhost:3000/api/watch/1/progress \
+  -H "Content-Type: application/json" \
+  -d '{"idProfilo":1,"durataVisualizzata":3600}'
+
+# Aggiungi ai preferiti
+curl -X POST http://localhost:3000/api/favorites \
+  -H "Content-Type: application/json" \
+  -d '{"idProfilo":1,"idContenuto":1,"tipo":"film","azione":"aggiungi"}'
+```
+
+---
+
+## 🎬 VISUALIZZA:
+
+```
+http://localhost:3000/watch/1
+```
+
+---
+
+## 📖 DOCUMENTI:
+
+| File | Contenuto |
+|------|-----------|
+| `QUICK_START.md` | Inizio veloce (5 min) |
+| `UPLOAD_GUIDE.md` | Come caricare file |
+| `API_DOCUMENTATION.md` | Tutti gli endpoint |
+| `ARCHITECTURE.md` | Diagrammi e flussi |
+
+---
+
+## 🔑 API ENDPOINTS:
+
+| Metodo | URL | Descrizione |
+|--------|-----|-------------|
+| GET | `/api/watch/[id]` | Recupera streaming |
+| POST | `/api/watch/[id]/progress` | Salva progresso |
+| GET | `/api/watch/[id]/progress` | Recupera progresso |
+| POST | `/api/rating` | Salva valutazione |
+| GET | `/api/rating` | Recupera valutazione |
+| POST | `/api/favorites` | Aggiungi/rimuovi preferiti |
+| GET | `/api/favorites` | Verifica se favorito |
+| GET | `/api/my-list` | Lista preferiti |
+
+---
+
+## ✅ FILE CREATI:
+
+```
+✅ lib/types/streaming.ts
+✅ app/api/watch/[id]/route.ts
+✅ app/api/watch/[id]/progress/route.ts
+✅ app/api/rating/route.ts
+✅ app/api/favorites/route.ts
+✅ data/seed_data.sql
+✅ 6 file documentazione (.md)
+✅ 2 script setup (.sh e .ps1)
+```
+
+---
+
+## 🎯 PROSSIMI 5 MINUTI:
+
+1. `mkdir -p public/{videos,audio,subtitles}`
+2. Scarica video test
+3. `mysql -u root -p Netflix < data/seed_data.sql`
+4. Apri `http://localhost:3000/watch/1`
+5. ✅ Done!
+
+---
+
+**Streaming backend completamente pronto! 🚀**

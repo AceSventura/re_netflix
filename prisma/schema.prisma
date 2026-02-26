@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma-client"
+  output = "../generated/prisma"
 }
 
 datasource db {
@@ -15,7 +15,7 @@ model Utenti {
   data_nascita DateTime      @db.Date
   password     String        @db.VarChar(255)
   profili      Profili[]
-  sottoscrive  Sottoscrive[]
+  sottoscrizioni  Sottoscrizioni[]
 }
 
 model Profili {
@@ -39,7 +39,7 @@ model Abbonamenti {
   id_abbonamento Int           @id @default(autoincrement())
   piano          String        @db.VarChar(50)
   costo_mensile  Decimal       @db.Decimal(6, 2)
-  sottoscrive    Sottoscrive[]
+  sottoscrizioni    Sottoscrizioni[]
 }
 
 model Sottoscrizioni {
@@ -64,6 +64,7 @@ model Fatture {
 
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
+  sottoscrizioni Sottoscrizioni[]
 
   @@map("Fatture")
 }

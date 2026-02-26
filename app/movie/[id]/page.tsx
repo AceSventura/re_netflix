@@ -1,11 +1,21 @@
-import { Play, Plus, ThumbsUp, X } from "lucide-react"; // Importa icone simili a Netflix
+import { Play, Plus, ThumbsUp, X } from "lucide-react";
+import Link from "next/link";
+import React from "react";
 
 interface PageProps {
     params: Promise<{ id: string }>;
 }
 
-export default async function MovieDetailPage({ params }: PageProps) {
-    const { id } = await params;
+export default function MovieDetailPage({ params }: PageProps) {
+    const [id, setId] = React.useState<string>('');
+
+    React.useEffect(() => {
+        const unwrapParams = async () => {
+            const { id: contentId } = await params;
+            setId(contentId);
+        };
+        unwrapParams();
+    }, [params]);
 
     // Dati estratti dall'HTML di KPop Demon Hunters
     const movie = {
@@ -56,7 +66,7 @@ export default async function MovieDetailPage({ params }: PageProps) {
                         className="w-full h-full object-cover"
                     />
                     {/* Overlay gradiente nero tipico di Netflix */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/30" />
+                    <div className="absolute inset-0 bg-linear-to-t from-[#141414] via-transparent to-black/30" />
                 </div>
 
                 <div className="absolute bottom-10 left-8 md:left-16 w-full max-w-xl p-4">
@@ -66,9 +76,11 @@ export default async function MovieDetailPage({ params }: PageProps) {
                     </h1>
 
                     <div className="flex gap-3 mb-6">
-                        <button className="flex items-center gap-2 px-8 py-2 bg-white text-black rounded font-bold hover:bg-white/80 transition">
-                            <Play fill="black" /> Riproduci
-                        </button>
+                        <Link href={`/watch/${id}`}>
+                            <button className="flex items-center gap-2 px-8 py-2 bg-white text-black rounded font-bold hover:bg-white/80 transition">
+                                <Play fill="black" /> Riproduci
+                            </button>
+                        </Link>
                         <button className="flex items-center justify-center w-10 h-10 bg-[#2a2a2a]/60 border-2 border-gray-400 rounded-full hover:border-white transition">
                             <Plus />
                         </button>

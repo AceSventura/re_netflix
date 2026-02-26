@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Play, Plus, X, ThumbsUp, Volume2, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -37,7 +38,7 @@ export default function MovieDetailModal({ id }: { id: string }) {
     };
 
     return (
-        <div className={`fixed inset-0 z-[500] flex justify-center bg-black/70 overflow-y-auto transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`}>
+        <div className={`fixed inset-0 z-500 flex justify-center bg-black/70 overflow-y-auto transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`}>
             {/* Backdrop cliccabile */}
             <div className="absolute inset-0" onClick={closeModal} />
 
@@ -51,7 +52,7 @@ export default function MovieDetailModal({ id }: { id: string }) {
                         className="w-full h-full object-cover"
                         alt="Hero"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-[#181818] via-transparent to-transparent" />
 
                     <button onClick={closeModal} className="absolute top-4 right-4 p-2 bg-[#181818] rounded-full text-white hover:bg-white/20 transition">
                         <X size={24} />
@@ -62,9 +63,11 @@ export default function MovieDetailModal({ id }: { id: string }) {
                             {movie.title}
                         </h2>
                         <div className="flex items-center gap-3">
-                            <button className="flex items-center gap-2 bg-white text-black px-8 py-2.5 rounded shadow hover:bg-white/80 transition font-bold">
-                                <Play fill="black" size={20}/> Riproduci
-                            </button>
+                            <Link href={`/watch/${id}`}>
+                                <button className="flex items-center gap-2 bg-white text-black px-8 py-2.5 rounded shadow hover:bg-white/80 transition font-bold">
+                                    <Play fill="black" size={20}/> Riproduci
+                                </button>
+                            </Link>
                             <button className="p-2 border-2 border-zinc-500 rounded-full text-white hover:border-white transition"><Plus size={22} /></button>
                             <button className="p-2 border-2 border-zinc-500 rounded-full text-white hover:border-white transition"><ThumbsUp size={20} /></button>
                             <div className="ml-auto"><Volume2 className="text-zinc-500 hover:text-white cursor-pointer" /></div>

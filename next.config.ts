@@ -6,6 +6,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.nflxso.net', // Accetta tutti i sottodomini di Netflix
       },
+      {
+        protocol: 'https',
+        hostname: 'assets.nflxext.com', // Per sfondo
+      },
     ],
   },
 };

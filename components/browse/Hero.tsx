@@ -1,6 +1,10 @@
 "use client";
 
+import Link from "next/link";
+
 export default function Hero() {
+    const heroContentId = "1";
+
     return (
         <section className="relative w-full h-[70vh] mb-12">
             {/* VIDEO BACKGROUND */}
@@ -13,7 +17,7 @@ export default function Hero() {
             />
 
             {/* OVERLAY OSCURANTE */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-black/20"></div>
 
             {/* CONTENUTO TESTO */}
             <div className="absolute bottom-20 left-10 text-white max-w-xl">
@@ -26,9 +30,11 @@ export default function Hero() {
                 </p>
 
                 <div className="flex gap-4">
-                    <button className="bg-white text-black px-6 py-3 rounded-md font-semibold hover:bg-gray-300 transition">
-                        ▶ Play
-                    </button>
+                    <Link href={`/watch/${heroContentId}`}>
+                        <button className="bg-white text-black px-6 py-3 rounded-md font-semibold hover:bg-gray-300 transition">
+                            ▶ Play
+                        </button>
+                    </Link>
 
                     <button className="bg-gray-700/70 px-6 py-3 rounded-md font-semibold hover:bg-gray-600 transition">
                         ℹ More Info
