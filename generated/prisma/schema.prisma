@@ -62,7 +62,7 @@ model contenuti {
   titolo_contenuto String
   tipo             String
   id_stagione      Int?
-  copertina_url    String?       
+  copertina_url    String?
   classificato_in  classificato_in[]
   codificato       codificato[]
   stagioni         stagioni?         @relation(fields: [id_stagione], references: [id_stagione], onDelete: NoAction, onUpdate: NoAction)

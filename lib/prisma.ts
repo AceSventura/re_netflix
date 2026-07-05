@@ -1,14 +1,9 @@
-import "dotenv/config";
-import { PrismaMariaDb } from '@prisma/adapter-mariadb';
-import { PrismaClient } from '../generated/prisma/client';
+import { PrismaClient } from "./generated/prisma";
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 
-const adapter = new PrismaMariaDb({
-  host: process.env.DATABASE_HOST,
-  user: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME,
-  connectionLimit: 5
-});
-const prisma = new PrismaClient({ adapter });
+// Il percorso è relativo alla root del processo Node in esecuzione
+const adapter = new PrismaBetterSqlite3({ url: "file:./prisma/netflix.db" })
+
+const prisma = new PrismaClient({ adapter })
 
 export { prisma }
