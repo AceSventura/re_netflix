@@ -10,6 +10,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'assets.nflxext.com', // Per sfondo
       },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+      },
     ],
   },
 };
