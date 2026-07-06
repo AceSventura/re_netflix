@@ -54,11 +54,12 @@ export async function POST(request: Request) {
     });
 
     // 6. Crea la sessione utente impostando un Cookie Sicuro
-    // Sostituisci "dummy-token-generato" con un vero JWT o un ID sessione nel tuo DB
-    cookies().set("session_token", "dummy-token-generato", {
-      httpOnly: true, // Impedisce a JavaScript lato client di leggere il cookie (previene XSS)
-      secure: process.env.NODE_ENV === "production", // Solo HTTPS in produzione
-      sameSite: "lax", // Previene attacchi CSRF base
+    const cookieStore = await cookies(); // <--- Aggiungi l'await qui
+    
+    cookieStore.set("session_token", "dummy-token-generato", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7 // Scade tra 7 giorni
     });
 
