@@ -3,11 +3,10 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Play, Plus, X, ThumbsUp, Volume2 } from "lucide-react";
+import { Play, Plus, X, ThumbsUp, Volume2, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getMediaDetails } from "@/app/actions/media"; // Assicurati che il percorso sia corretto
+import { getMediaDetails } from "@/app/actions/media";
 
-// Definizione della struttura dati attesa dal DB
 interface MediaDetail {
     title: string;
     description: string;
@@ -17,32 +16,36 @@ interface MediaDetail {
     cast: string[];
     genres: string[];
     heroImage: string;
-    episodes: Array<{ title: string; desc: string; time: string; image: string }>;
+    episodes: Array<{ 
+        id: string;
+        title: string; 
+        desc: string; 
+        time: string; 
+        image: string;
+        season?: number; // Parametro aggiunto per raggruppare gli episodi
+    }>;
 }
 
-// Il componente non richiede parametri in ingresso
 export default function MovieDetailModal() {
     const router = useRouter();
     const searchParams = useSearchParams();
     
-    // Estrazione parametri GET
     const id = searchParams.get("id");
     const type = searchParams.get("type");
 
     const [isVisible, setIsVisible] = useState(false);
-    
-    // Stati per la gestione dei dati asincroni
     const [movie, setMovie] = useState<MediaDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Stato per la gestione della stagione selezionata
+    const [selectedSeason, setSelectedSeason] = useState<number>(1);
 
-    // Animazione e blocco scroll (eseguito solo al mount)
     useEffect(() => {
         setIsVisible(true);
         document.body.style.overflow = "hidden";
         return () => { document.body.style.overflow = "auto"; };
     }, []);
 
-    // Fetching dei dati dal database (dipende dai parametri URL)
     useEffect(() => {
         if (!id || !type) return;
 
@@ -50,6 +53,13 @@ export default function MovieDetailModal() {
             setIsLoading(true);
             const data = await getMediaDetails(id, type);
             setMovie(data);
+            
+            // Inizializza la select alla prima stagione disponibile
+            if (data?.episodes && data.episodes.length > 0) {
+                const firstSeason = Math.min(...data.episodes.map(ep => ep.season || 1));
+                setSelectedSeason(firstSeason);
+            }
+            
             setIsLoading(false);
         };
         fetchDetails();
@@ -60,13 +70,21 @@ export default function MovieDetailModal() {
         setTimeout(() => router.push("/browse", { scroll: false }), 300);
     };
 
+    // Logica di derivazione: Estrae stagioni uniche e filtra gli episodi da mostrare
+    const availableSeasons = movie 
+        ? Array.from(new Set(movie.episodes.map(ep => ep.season || 1))).sort((a, b) => a - b)
+        : [];
+        
+    const displayedEpisodes = movie 
+        ? movie.episodes.filter(ep => (ep.season || 1) === selectedSeason)
+        : [];
+
     return (
         <div className={`fixed inset-0 z-500 flex justify-center bg-black/70 overflow-y-auto transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`}>
             <div className="absolute inset-0" onClick={closeModal} />
 
             <div className={`relative bg-[#181818] w-[95%] max-w-[850px] h-fit min-h-[500px] my-8 rounded-xl overflow-hidden shadow-2xl transition-transform duration-300 ${isVisible ? "scale-100" : "scale-90"}`}>
                 
-                {/* Gestione stato di caricamento e fallback */}
                 {isLoading ? (
                     <div className="flex h-[500px] items-center justify-center text-white">Caricamento in corso...</div>
                 ) : !movie ? (
@@ -76,7 +94,6 @@ export default function MovieDetailModal() {
                     </div>
                 ) : (
                     <>
-                        {/* 1. HEADER HERO */}
                         <div className="relative aspect-video w-full bg-zinc-900">
                             <Image
                                 src={movie.heroImage}
@@ -96,7 +113,7 @@ export default function MovieDetailModal() {
                                     {movie.title}
                                 </h2>
                                 <div className="flex items-center gap-3">
-                                    <Link href={`/watch/${id}`}>
+                                    <Link href={`/watch/${movie.episodes?.length > 0 ? movie.episodes[0].id : id}`}>
                                         <button className="flex items-center gap-2 bg-white text-black px-8 py-2.5 rounded shadow hover:bg-white/80 transition font-bold">
                                             <Play fill="black" size={20}/> Riproduci
                                         </button>
@@ -108,9 +125,7 @@ export default function MovieDetailModal() {
                             </div>
                         </div>
 
-                        {/* 2. SEZIONE INFO */}
                         <div className="p-8 md:p-12 flex flex-col md:flex-row gap-8 md:gap-12 text-white">
-                            {/* Colonna Principale (Descrizione) */}
                             <div className={`${(movie.cast.length > 0 || movie.genres.length > 0) ? 'md:w-[65%]' : 'w-full'} space-y-6`}>
                                 <div className="flex items-center gap-2 text-sm font-semibold">
                                     <span className="text-green-500 font-bold text-lg">98% Compatibile</span>
@@ -124,7 +139,6 @@ export default function MovieDetailModal() {
                                 </p>
                             </div>
 
-                            {/* Colonna Laterale (Renderizzata solo se i dati esistono) */}
                             {(movie.cast.length > 0 || movie.genres.length > 0) && (
                                 <div className="md:w-[35%] text-[14px] space-y-4 leading-tight">
                                     {movie.cast.length > 0 && (
@@ -143,17 +157,43 @@ export default function MovieDetailModal() {
                             )}
                         </div>
 
-                        {/* 3. LISTA EPISODI (Renderizzata solo se l'array non è vuoto) */}
                         {movie.episodes.length > 0 && (
                             <div className="px-8 md:px-12 pb-16 text-white">
-                                <div className="flex justify-between items-center mb-8 border-b border-zinc-700 pb-4">
+                                <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-2xl font-bold">Episodi</h3>
-                                    <span className="text-zinc-400 text-sm italic">{movie.title} Collection</span>
+                                    
+                                    {/* Dropdown Selettore Stagioni come in "immagine.png" */}
+                                    {availableSeasons.length > 1 && (
+                                        <div className="relative inline-block">
+                                            <select 
+                                                value={selectedSeason}
+                                                onChange={(e) => setSelectedSeason(Number(e.target.value))}
+                                                className="bg-[#242424] text-white border border-zinc-700 px-4 py-2 pr-10 rounded font-semibold text-lg outline-none cursor-pointer appearance-none hover:bg-[#333333] transition focus:ring-2 focus:ring-white/30"
+                                            >
+                                                {availableSeasons.map(seasonNum => (
+                                                    <option key={seasonNum} value={seasonNum}>
+                                                        Stagione {seasonNum}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white" size={20} />
+                                        </div>
+                                    )}
+                                    {availableSeasons.length === 1 && (
+                                        <span className="text-zinc-400 font-semibold text-lg">
+                                            Stagione {availableSeasons[0]}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-col">
-                                    {movie.episodes.map((ep, i) => (
-                                        <div key={i} className="flex items-center gap-6 p-6 rounded-lg hover:bg-[#2f2f2f] transition cursor-pointer group border-b border-zinc-800 last:border-0">
+                                    {/* Renderizza solo gli episodi filtrati */}
+                                    {displayedEpisodes.map((ep, i) => (
+                                        <div 
+                                            key={i} 
+                                            onClick={() => router.push(`/watch/${ep.id}`)}
+                                            className="flex items-center gap-6 p-6 rounded-lg hover:bg-[#2f2f2f] transition cursor-pointer group border-b border-zinc-800 last:border-0"
+                                        >
                                             <span className="text-2xl font-bold text-zinc-500 w-4">{i + 1}</span>
                                             <div className="w-36 md:w-44 aspect-video bg-zinc-800 rounded-md relative overflow-hidden shrink-0">
                                                 <Image 
