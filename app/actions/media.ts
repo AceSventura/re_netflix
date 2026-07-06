@@ -6,39 +6,100 @@ import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 const adapter = new PrismaBetterSqlite3({ url: "file:./prisma/netflix.db" });
 const prisma = new PrismaClient({ adapter });
 
-export async function getBrowseData() {
+export async function getBrowseData(profileId?: number) {
     try {
-        // Estrazione Serie TV
+        // 1. Estrazione dati base
         const serie = await prisma.serie_tv.findMany();
-        
-        // Estrazione Film
         const film = await prisma.contenuti.findMany({
             where: { tipo: "film" }
         });
 
-        // Normalizzazione dei dati per adattarli alla prop `movies` del componente MovieRow
+        // 2. Estrazione "Top 10" simulate (ultimi 10 inserimenti)
+        const topSeries = await prisma.serie_tv.findMany({
+            take: 10,
+            orderBy: { id_serie_tv: 'desc' }
+        });
+        const topMovies = await prisma.contenuti.findMany({
+            where: { tipo: "film" },
+            take: 10,
+            orderBy: { id_contenuto: 'desc' }
+        });
+
+        // 3. Estrazione "La mia lista" subordinata alla presenza del profileId
+        let myList: Array<{ id: string; title: string; poster: string; type: string }> = [];
+        
+        if (profileId) {
+            const savedMovies = await prisma.salva_film.findMany({
+                where: { id_profilo: profileId },
+                include: { contenuti: true }
+            });
+            const savedSeries = await prisma.salva_serie.findMany({
+                where: { id_profilo: profileId },
+                include: { serie_tv: true }
+            });
+
+            const formattedSavedMovies = savedMovies.map(sm => ({
+                id: sm.contenuti.id_contenuto.toString(),
+                title: sm.contenuti.titolo_contenuto,
+                poster: sm.contenuti.copertina_url || "https://picsum.photos/640/360?random=3",
+                type: "film"
+            }));
+
+            const formattedSavedSeries = savedSeries.map(ss => ({
+                id: ss.serie_tv.id_serie_tv.toString(),
+                title: ss.serie_tv.titolo_serie_tv,
+                poster: ss.serie_tv.img_hero || "https://picsum.photos/640/360?random=4",
+                type: "serie"
+            }));
+
+            myList = [...formattedSavedMovies, ...formattedSavedSeries];
+        }
+
+        // 4. Normalizzazione degli array generici
         const formattedSeries = serie.map(s => ({
             id: s.id_serie_tv.toString(),
             title: s.titolo_serie_tv,
-            poster: s.img_hero || "https://picsum.photos/640/360?random=1", // Fallback per asset mancanti
+            poster: s.img_hero || "https://picsum.photos/640/360?random=1",
             type: "serie"
         }));
 
         const formattedMovies = film.map(f => ({
             id: f.id_contenuto.toString(),
             title: f.titolo_contenuto,
-            // I film non hanno ancora copertina, viene assegnato un placeholder automatico
-            poster: f.copertina_url || "https://picsum.photos/640/360?random=2", 
+            poster: f.copertina_url || "https://picsum.photos/640/360?random=2",
             type: "film"
         }));
 
-        return { series: formattedSeries, movies: formattedMovies };
+        const formattedTopSeries = topSeries.map(s => ({
+            id: s.id_serie_tv.toString(),
+            title: s.titolo_serie_tv,
+            description: s.descrizione || "", // Aggiunta
+            poster: s.img_hero || "https://picsum.photos/1920/1080?random=5", // Preferibile usare immagini orizzontali per l'Hero
+            type: "serie"
+        }));
+
+        const formattedTopMovies = topMovies.map(f => ({
+            id: f.id_contenuto.toString(),
+            title: f.titolo_contenuto,
+            description: f.descrizione || "", // Aggiunta
+            poster: f.copertina_url || "https://picsum.photos/1920/1080?random=6",
+            type: "film"
+        }));
+
+        // 5. Restituzione del blocco dati formattato
+        return { 
+            series: formattedSeries, 
+            movies: formattedMovies,
+            topSeries: formattedTopSeries,
+            topMovies: formattedTopMovies,
+            myList: myList
+        };
+
     } catch (error) {
         console.error("Errore nell'estrazione dati:", error);
-        return { series: [], movies: [] };
+        return { series: [], movies: [], topSeries: [], topMovies: [], myList: [] };
     }
 }
-
 
 
 export async function getMediaDetails(id: string, type: string) {
