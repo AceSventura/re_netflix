@@ -184,3 +184,103 @@ export async function getMediaDetails(id: string, type: string) {
         return null;
     }
 }
+
+export async function getAllMovies() {
+    try {
+        // Estrae solo i film (contenuti senza legami con stagioni)
+        const movies = await prisma.contenuti.findMany({
+            where: { id_stagione: null },
+            select: {
+                id_contenuto: true,
+                titolo_contenuto: true,
+                copertina_url: true,
+            }
+        });
+
+        return movies.map(m => ({
+            id: m.id_contenuto.toString(),
+            title: m.titolo_contenuto,
+            thumbnail: m.copertina_url || "https://picsum.photos/300/200?random=1",
+            type: "film"
+        }));
+    } catch (error) {
+        console.error("Errore recupero film:", error);
+        return [];
+    }
+}
+
+export async function getAllSeries() {
+    try {
+        const series = await prisma.serie_tv.findMany({
+            select: {
+                id_serie_tv: true,
+                titolo_serie_tv: true,
+                img_hero: true, 
+            }
+        });
+
+        return series.map(s => ({
+            id: s.id_serie_tv.toString(),
+            title: s.titolo_serie_tv,
+            thumbnail: s.img_hero || "https://picsum.photos/300/200?random=2",
+            type: "serie_tv"
+        }));
+    } catch (error) {
+        console.error("Errore recupero serie tv:", error);
+        return [];
+    }
+}
+
+export async function getMyListFromIds(items: { id: string; type: string }[]) {
+    if (!items || items.length === 0) return [];
+
+    try {
+        // Separazione degli ID per tipologia
+        const filmIds = items
+            .filter(i => i.type === 'film')
+            .map(i => parseInt(i.id, 10))
+            .filter(id => !isNaN(id));
+
+        const serieIds = items
+            .filter(i => i.type === 'serie_tv' || i.type === 'serie')
+            .map(i => parseInt(i.id, 10))
+            .filter(id => !isNaN(id));
+
+        // Esecuzione parallela delle query
+        const [films, series] = await Promise.all([
+            filmIds.length > 0 
+                ? prisma.contenuti.findMany({
+                    where: { id_contenuto: { in: filmIds } },
+                    select: { id_contenuto: true, titolo_contenuto: true, copertina_url: true }
+                  }) 
+                : Promise.resolve([]),
+            
+            serieIds.length > 0 
+                ? prisma.serie_tv.findMany({
+                    where: { id_serie_tv: { in: serieIds } },
+                    select: { id_serie_tv: true, titolo_serie_tv: true, img_hero: true }
+                  }) 
+                : Promise.resolve([])
+        ]);
+
+        // Normalizzazione dei dati
+        const formattedFilms = films.map(f => ({
+            id: f.id_contenuto.toString(),
+            title: f.titolo_contenuto,
+            thumbnail: f.copertina_url || "https://picsum.photos/300/200?random=1",
+            type: "film"
+        }));
+
+        const formattedSeries = series.map(s => ({
+            id: s.id_serie_tv.toString(),
+            title: s.titolo_serie_tv,
+            thumbnail: s.img_hero || "https://picsum.photos/300/200?random=2",
+            type: "serie_tv"
+        }));
+
+        return [...formattedFilms, ...formattedSeries];
+    } catch (error) {
+        console.error("Errore recupero dati lista:", error);
+        return [];
+    }
+}

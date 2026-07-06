@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { getMediaDetails } from "@/app/actions/media";
 
 interface HeroProps {
     item: {
@@ -13,10 +16,36 @@ interface HeroProps {
 }
 
 export default function Hero({ item }: HeroProps) {
+    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handlePlay = async () => {
+        if (isLoading) return;
+        setIsLoading(true);
+
+        try {
+            if (item.type === "film") {
+                router.push(`/watch/${item.id}`);
+            } else {
+                const details = await getMediaDetails(item.id, item.type);
+                
+                if (details?.episodes && details.episodes.length > 0) {
+                    const firstEpisodeId = details.episodes[0].id; 
+                    router.push(`/watch/${firstEpisodeId}`);
+                } else {
+                    console.error("Nessun episodio trovato per questa serie.");
+                }
+            }
+        } catch (error) {
+            console.error("Errore durante l'instradamento del player:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <section className="relative w-full h-[70vh] mb-12">
             {/* VIDEO BACKGROUND */}
-            {/* Attualmente statico. Per renderlo dinamico servirà una colonna url_trailer nel DB */}
             <video
                 className="w-full h-full object-cover"
                 src="/videos/hero.mp4"
@@ -34,19 +63,20 @@ export default function Hero({ item }: HeroProps) {
                     {item.title}
                 </h1>
                 
-                {/* Aggiunto line-clamp-3 per evitare overflow del testo in descrizioni troppo lunghe */}
                 <p className="text-lg mb-6 max-w-lg drop-shadow-md line-clamp-3">
                     {item.description}
                 </p>
 
                 <div className="flex gap-4">
-                    <Link href={`/watch/${item.id}`}>
-                        <button className="bg-white text-black px-6 py-3 rounded-md font-semibold hover:bg-gray-300 transition">
-                            ▶ Play
-                        </button>
-                    </Link>
+                    {/* Tasto Play con logica di risoluzione asincrona dell'ID */}
+                    <button 
+                        onClick={handlePlay}
+                        disabled={isLoading}
+                        className="bg-white text-black px-6 py-3 rounded-md font-semibold hover:bg-gray-300 transition disabled:opacity-50 flex items-center justify-center min-w-[100px]"
+                    >
+                        {isLoading ? "⏳..." : "▶ Play"}
+                    </button>
 
-                    {/* Sostituito il button con un Link per gestire i parametri URL del modale */}
                     <Link href={`?id=${item.id}&type=${item.type}`} scroll={false}>
                         <button className="bg-gray-700/70 text-white px-6 py-3 rounded-md font-semibold hover:bg-gray-600 transition">
                             ℹ More Info

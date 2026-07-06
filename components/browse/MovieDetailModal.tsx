@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation"; // Aggiunto usePathname
 import Link from "next/link";
 import Image from "next/image";
 import { Play, Plus, X, ThumbsUp, Volume2, ChevronDown } from "lucide-react";
@@ -22,13 +22,14 @@ interface MediaDetail {
         desc: string; 
         time: string; 
         image: string;
-        season?: number; // Parametro aggiunto per raggruppare gli episodi
+        season?: number;
     }>;
 }
 
 export default function MovieDetailModal() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const pathname = usePathname(); // Rileva dinamicamente il percorso (/browse, /browse/movies, ecc.)
     
     const id = searchParams.get("id");
     const type = searchParams.get("type");
@@ -36,14 +37,17 @@ export default function MovieDetailModal() {
     const [isVisible, setIsVisible] = useState(false);
     const [movie, setMovie] = useState<MediaDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    
-    // Stato per la gestione della stagione selezionata
     const [selectedSeason, setSelectedSeason] = useState<number>(1);
 
     useEffect(() => {
-        setIsVisible(true);
+        const timer = setTimeout(() => setIsVisible(true), 10);
+        
         document.body.style.overflow = "hidden";
-        return () => { document.body.style.overflow = "auto"; };
+        
+        return () => { 
+            clearTimeout(timer);
+            document.body.style.overflow = "auto"; 
+        };
     }, []);
 
     useEffect(() => {
@@ -54,7 +58,6 @@ export default function MovieDetailModal() {
             const data = await getMediaDetails(id, type);
             setMovie(data);
             
-            // Inizializza la select alla prima stagione disponibile
             if (data?.episodes && data.episodes.length > 0) {
                 const firstSeason = Math.min(...data.episodes.map(ep => ep.season || 1));
                 setSelectedSeason(firstSeason);
@@ -67,10 +70,10 @@ export default function MovieDetailModal() {
 
     const closeModal = () => {
         setIsVisible(false);
-        setTimeout(() => router.push("/browse", { scroll: false }), 300);
+        // Sostituito il percorso fisso con 'pathname' per preservare la categoria corrente
+        setTimeout(() => router.push(pathname, { scroll: false }), 300);
     };
 
-    // Logica di derivazione: Estrae stagioni uniche e filtra gli episodi da mostrare
     const availableSeasons = movie 
         ? Array.from(new Set(movie.episodes.map(ep => ep.season || 1))).sort((a, b) => a - b)
         : [];
@@ -162,7 +165,6 @@ export default function MovieDetailModal() {
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-2xl font-bold">Episodi</h3>
                                     
-                                    {/* Dropdown Selettore Stagioni come in "immagine.png" */}
                                     {availableSeasons.length > 1 && (
                                         <div className="relative inline-block">
                                             <select 
@@ -187,7 +189,6 @@ export default function MovieDetailModal() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    {/* Renderizza solo gli episodi filtrati */}
                                     {displayedEpisodes.map((ep, i) => (
                                         <div 
                                             key={i} 
