@@ -104,8 +104,6 @@ export async function getBrowseData(profileId?: number) {
     }
 }
 
-
-
 export async function getMediaDetails(id: string, type: string) {
     const numericId = parseInt(id, 10);
     if (isNaN(numericId)) return null;
@@ -114,46 +112,69 @@ export async function getMediaDetails(id: string, type: string) {
         if (type === "film") {
             const film = await prisma.contenuti.findUnique({
                 where: { id_contenuto: numericId },
-                include: { partecipa: { include: { artisti: true } }, classificato_in: { include: { generi: true } } }
+                include: { 
+                    partecipa: { include: { artisti: true } }, 
+                    classificato_in: { include: { generi: true } } 
+                }
             });
             
             if (!film) return null;
+            
             const cast = film.partecipa.map(p => p.artisti.nome);
             const genres = film.classificato_in.map(c => c.generi.nome_genere);
 
             return {
                 title: film.titolo_contenuto,
                 description: film.descrizione || "Nessuna descrizione disponibile.",
-                year: film.anno_rilascio || 2024,
-                maturity: "T", // Non presente nello schema, valore statico
+                year: film.anno_rilascio || 2026,
+                maturity: "T", 
                 duration: film.durata ? `${film.durata} min` : "N/D",
                 cast: cast,
                 genres: genres,
                 heroImage: film.copertina_url || "https://picsum.photos/800/450?random=1",
-                episodes: [] // I film non hanno episodi
+                episodes: [] 
             };
         } 
         
-        if (type === "serie") {
+        if (type === "serie" || type === "serie_tv") {
             const serie = await prisma.serie_tv.findUnique({
-                where: { id_serie_tv: numericId }
+                where: { id_serie_tv: numericId },
+                include: {
+                    stagioni: {
+                        orderBy: { numero_stagione: 'asc' },
+                        include: {
+                            contenuti: {
+                                orderBy: { id_contenuto: 'asc' }
+                            }
+                        }
+                    }
+                }
             });
 
             if (!serie) return null;
+
+            const episodesList = serie.stagioni.flatMap(stagione => 
+                stagione.contenuti.map(ep => ({
+                    id: ep.id_contenuto.toString(),
+                    title: ep.titolo_contenuto,
+                    desc: ep.descrizione || "Nessuna descrizione disponibile.",
+                    time: ep.durata ? `${ep.durata} min` : "N/D",
+                    image: ep.copertina_url || "https://picsum.photos/300/200?random=3",
+                    // Aggiunta del parametro mancante per il raggruppamento nel frontend
+                    season: stagione.numero_stagione 
+                }))
+            );
+
             return {
                 title: serie.titolo_serie_tv,
-                description: serie.descrizione || "Nessuna descrizione disponibile.", // Colonna assente in serie_tv
-                year: serie.anno_inizio || 2026, // Colonna assente in serie_tv
+                description: serie.descrizione || "Nessuna descrizione disponibile.", 
+                year: serie.anno_inizio || 2026, 
                 maturity: "T",
                 duration: "Stagioni multiple",
-                cast: [], // Relazione assente in serie_tv
-                genres: [], // Relazione assente in serie_tv
-                heroImage: serie.img_hero || "https://picsum.photos/800/450?random=2", // L'attributo è img_hero
-                
-                // Placeholder per gli episodi, poiché la tabella episodi/stagioni richiede logiche più complesse
-                episodes: [
-                    { title: "Episodio 1", desc: "Descrizione episodio 1", time: "45m", image: "https://picsum.photos/300/200?random=3" }
-                ]
+                cast: [], 
+                genres: [], 
+                heroImage: serie.img_hero || "https://picsum.photos/800/450?random=2", 
+                episodes: episodesList
             };
         }
         
@@ -163,4 +184,3 @@ export async function getMediaDetails(id: string, type: string) {
         return null;
     }
 }
-
