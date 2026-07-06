@@ -1,98 +1,102 @@
 "use client";
 
-import { useParams, useRouter, useSearchParams } from "next/navigation"; // Aggiunto useSearchParams
-import { useEffect, useState } from "react";
-import Navbar from "@/components/browse/Navbar"; 
-import { getAllMovies, getAllSeries, getMyListFromIds } from "@/app/actions/media";
-import MovieDetailModal from "@/components/browse/MovieDetailModal"; 
+import { useEffect, useRef, useState, use } from "react";
+import { useRouter } from "next/navigation";
+import Hls from "hls.js";
 
-type ContentItem = {
-    id: string;
-    title: string;
-    thumbnail: string;
-    type: string;
-};
+interface WatchPageProps {
+    params: Promise<{ id: string }>;
+}
 
-export default function CategoryPage() {
-    const params = useParams();
+export default function WatchPage({ params }: WatchPageProps) {
     const router = useRouter();
-    const searchParams = useSearchParams(); // Estrazione parametri
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [error, setError] = useState<string | null>(null);
     
-    const category = params.category as string;
-    const selectedId = searchParams.get("id");
-    const selectedType = searchParams.get("type");
-
-    const [content, setContent] = useState<ContentItem[]>([]);
-
-    const getPageTitle = () => {
-        switch (category) {
-            case "series": return "Serie TV";
-            case "movies": return "Film";
-            case "my-list": return "La mia lista";
-            default: return "Sfoglia";
-        }
-    };
-    const pageTitle = getPageTitle();
+    // Risoluzione asincrona dei parametri (Standard Next.js 15+)
+    const resolvedParams = use(params);
+    const targetId = resolvedParams.id;
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (category === "series") {
-                const data = await getAllSeries();
-                setContent(data);
-            } else if (category === "movies") {
-                const data = await getAllMovies();
-                setContent(data);
-            } else if (category === "my-list") {
-                // Estrazione dello stato locale (es. [{ id: "1", type: "film" }])
-                const savedItems = JSON.parse(localStorage.getItem("my_netflix_list") || "[]");
-                
-                if (savedItems.length > 0) {
-                    // Chiamata backend per ottenere i metadati aggiornati
-                    const data = await getMyListFromIds(savedItems);
-                    setContent(data);
-                } else {
-                    setContent([]);
+        const video = videoRef.current;
+        if (!video || !targetId) return;
+
+        // L'URL dello stream corrisponde ESATTAMENTE alla nostra nuova API
+        const streamUrl = `/api/watch/${targetId}`;
+        let hls: Hls;
+
+        if (Hls.isSupported()) {
+            hls = new Hls({
+                startLevel: -1, 
+                capLevelToPlayerSize: true,
+            });
+
+            hls.loadSource(streamUrl);
+            hls.attachMedia(video);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                video.play().catch((e) => {
+                    console.log("Autoplay bloccato. Richiesta interazione utente.", e);
+                });
+            });
+
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                    console.error("Errore fatale player HLS:", data);
+                    setError("Impossibile caricare il flusso multimediale.");
+                    hls.destroy();
                 }
+            });
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+            // Fallback per Safari
+            video.src = streamUrl;
+            video.addEventListener("loadedmetadata", () => {
+                video.play().catch((e) => console.log("Autoplay bloccato.", e));
+            });
+            video.addEventListener("error", () => {
+                setError("Errore nel caricamento del video nativo.");
+            });
+        }
+
+        return () => {
+            if (hls) {
+                hls.destroy();
             }
         };
-
-        fetchData();
-    }, [category]);
+    }, [targetId]);
 
     return (
-        <div className="min-h-screen bg-[#141414]">
-            <Navbar />
-            
-            <main className="pt-32 px-4 md:px-12 relative">
-                <header className="mb-8">
-                    <h1 className="text-white text-2xl md:text-3xl font-medium">
-                        {pageTitle}
-                    </h1>
-                </header>
+        <div className="relative w-full h-screen bg-black flex items-center justify-center">
+            {/* Pulsante Indietro */}
+            <button 
+                onClick={() => router.back()}
+                className="absolute top-6 left-6 z-50 p-2 bg-black/50 hover:bg-black/80 rounded-full text-white transition"
+                aria-label="Torna indietro"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
 
-                {content.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        {content.map((item) => (
-                            <div 
-                                key={item.id} 
-                                onClick={() => router.push(`?id=${item.id}&type=${item.type}`, { scroll: false })}
-                                className="relative aspect-video bg-zinc-800 rounded-md overflow-hidden hover:scale-105 transition duration-300 cursor-pointer"
-                            >
-                                <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-zinc-500 text-lg mt-20 text-center">
-                        {category === "my-list" 
-                            ? "Non hai ancora aggiunto nulla alla tua lista." 
-                            : "Caricamento contenuti..."}
-                    </div>
-                )}
-            </main>
+            {/* Messaggio di Errore */}
+            {error && (
+                <div className="absolute inset-0 flex items-center justify-center z-40 text-white flex-col gap-4">
+                    <p className="text-xl font-semibold">{error}</p>
+                    <button onClick={() => router.back()} className="px-6 py-2 bg-white text-black rounded-md font-bold">
+                        Torna alla Home
+                    </button>
+                </div>
+            )}
 
-            {/* Renderizza il modale solo se i parametri URL sono presenti */}
-            {selectedId && selectedType && <MovieDetailModal />}
+            {/* Player Video */}
+            <video
+                ref={videoRef}
+                className="w-full h-full object-contain"
+                controls
+                autoPlay
+                playsInline
+            />
         </div>
     );
 }

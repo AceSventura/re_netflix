@@ -1,77 +1,90 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+// DISATTIVAZIONE CACHE NEXT.JS (Fondamentale per i generatori di flussi)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params;
-    const numericId = parseInt(id, 10);
-
-    // Cerca il contenuto e verifica se è legato a una stagione
-    const contenuto = await prisma.contenuti.findUnique({
-      where: { id_contenuto: numericId },
-      include: {
-        codificato: { include: { assets_video: true } },
-        stagioni: { // Risale alla stagione per capire se è una serie
-          include: {
-            serie_tv: {
-              include: {
-                stagioni: { // Scende di nuovo per prendere tutti gli episodi della serie
-                  orderBy: { numero_stagione: 'asc' },
-                  include: {
-                    contenuti: {
-                      orderBy: { id_contenuto: 'asc' },
-                      include: { codificato: { include: { assets_video: true } } }
-                    }
-                  }
-                }
-              }
-            }
-          }
+    try {
+        const resolvedParams = await params;
+        const targetId = parseInt(resolvedParams.id, 10);
+        
+        if (isNaN(targetId)) {
+            return new NextResponse("ID non valido", { status: 400 });
         }
-      }
-    });
 
-    if (!contenuto) {
-      return NextResponse.json({ success: false, error: 'Contenuto non trovato' }, { status: 404 });
+        const media = await prisma.contenuti.findUnique({
+            where: { id_contenuto: targetId },
+            include: {
+                codificato: {
+                    include: {
+                        assets_video: true
+                    }
+                },
+                include: {
+                    include: {
+                        assets_audio: {
+                            include: {
+                                parlato_in: {
+                                    include: {
+                                        lingue: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!media || media.codificato.length === 0) {
+            return new NextResponse("Manifest non trovato", { status: 404 });
+        }
+
+        const videoAsset = media.codificato[0].assets_video;
+        const audioAssets = media.include.map(inc => inc.assets_audio);
+
+        let m3u8Manifest = `#EXTM3U\n`;
+        m3u8Manifest += `#EXT-X-VERSION:3\n`;
+
+        if (audioAssets.length > 0) {
+            audioAssets.forEach((audio, index) => {
+                const nomeLingua = audio.parlato_in[0]?.lingue?.nome || `Lingua_${index + 1}`;
+                const codiceLingua = nomeLingua.substring(0, 2).toLowerCase();
+                const isDefault = index === 0 ? "YES" : "NO";
+
+                m3u8Manifest += `#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",NAME="${nomeLingua}",LANGUAGE="${codiceLingua}",AUTOSELECT=YES,DEFAULT=${isDefault},URI="${audio.url_traccia}"\n`;
+            });
+        }
+
+        const bitrate = videoAsset.bitrate || 2500000;
+        
+        if (audioAssets.length > 0) {
+            m3u8Manifest += `#EXT-X-STREAM-INF:BANDWIDTH=${bitrate},AUDIO="audio"\n`;
+        } else {
+            m3u8Manifest += `#EXT-X-STREAM-INF:BANDWIDTH=${bitrate}\n`;
+        }
+        
+        m3u8Manifest += `${videoAsset.url_manifest}\n`;
+
+        return new NextResponse(m3u8Manifest, {
+            status: 200,
+            headers: {
+                "Content-Type": "application/vnd.apple.mpegurl",
+                // Direttive Cache-Control rinforzate
+                "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+                "Access-Control-Allow-Origin": "*"
+            },
+        });
+
+    } catch (error) {
+        console.error("Errore API Watch:", error);
+        return new NextResponse("Errore interno del server", { status: 500 });
     }
-
-    const videoUrl = contenuto.codificato[0]?.assets_video?.url_manifest;
-    const isSerie = contenuto.id_stagione !== null;
-
-    const payload: any = {
-      id: contenuto.id_contenuto.toString(),
-      titolo: contenuto.titolo_contenuto,
-      descrizione: contenuto.descrizione,
-      tipo: isSerie ? 'serie_tv' : 'film',
-      streaming: { videoUrl: videoUrl || null }
-    };
-
-    // Se è un episodio, costruiamo l'array della barra laterale
-    if (isSerie && contenuto.stagioni?.serie_tv) {
-      const serie = contenuto.stagioni.serie_tv;
-      payload.titoloSerie = serie.titolo_serie_tv;
-      payload.stagioneCorrente = contenuto.stagioni.numero_stagione;
-      
-      payload.episodi = serie.stagioni.flatMap(stagione => 
-        stagione.contenuti.map((ep, index) => ({
-          id: ep.id_contenuto.toString(),
-          title: ep.titolo_contenuto,
-          description: ep.descrizione,
-          videoUrl: ep.codificato[0]?.assets_video?.url_manifest || null,
-          episodeNumber: index + 1,
-          seasonNumber: stagione.numero_stagione,
-          isCurrent: ep.id_contenuto === numericId
-        }))
-      );
-    }
-
-    return NextResponse.json({ success: true, data: payload });
-
-  } catch (error) {
-    console.error('Errore API Watch:', error);
-    return NextResponse.json({ success: false, error: 'Errore server' }, { status: 500 });
-  }
 }
