@@ -253,6 +253,8 @@ model utenti {
   email          String           @unique(map: "sqlite_autoindex_utenti_1")
   data_nascita   DateTime
   PASSWORD       String
+  otpCode        Int?
+  otpExpiry      DateTime?
   profili        profili[]
   sottoscrizioni sottoscrizioni[]
 }
