@@ -1,13 +1,17 @@
-import { PrismaClient } from "../../prisma/generated/client";
+import { PrismaClient } from "@prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { NextResponse } from "next/server";
 
-// Nota: se questa inizializzazione ti dava errore, la sintassi corretta di solito è:
-// import Database from "better-sqlite3";
-// const db = new Database("./prisma/netflix.db");
-// const adapter = new PrismaBetterSqlite3(db);
-const adapter = new PrismaBetterSqlite3({ url: "file:./prisma/netflix.db" } as any); 
+// 1. Inizializzazione corretta senza l'uso di "as any"
+const adapter = new PrismaBetterSqlite3({ url: "file:./prisma/netflix.db" });
 const prisma = new PrismaClient({ adapter });
+
+// 2. Definizione stretta del tipo per evitare "any" nel payload
+interface OtpResponsePayload {
+  success: boolean;
+  message: string;
+  devOtpCode?: string; // Il "?" indica che questo campo è facoltativo (apparirà solo in dev)
+}
 
 export async function POST(request: Request) {
   try {
@@ -17,41 +21,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email mancante" }, { status: 400 });
     }
 
-    // 1. Controlla se l'utente esiste realmente nel DB
-    const user = await prisma.user.findUnique({ 
+    const user = await prisma.utenti.findUnique({ 
       where: { email } 
     });
 
-    // Se user è null, significa che l'email non è nel database
     if (!user) {
       return NextResponse.json({ error: "Utente non trovato" }, { status: 404 });
     }
 
-    // 2. Genera un codice a 4 cifre
     const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // 3. Calcola la scadenza (ora + 15 minuti)
     const otpExpiry = new Date();
     otpExpiry.setMinutes(otpExpiry.getMinutes() + 15);
 
-    // 4. Salva il codice e la scadenza nel Database
-    await prisma.user.update({
+    await prisma.utenti.update({
       where: { email },
       data: { otpCode, otpExpiry }
     });
 
-    // 5. Gestione assenza servizio mail
     console.log(`[DEV EMAIL SIMULATOR] A: ${email} | Il tuo codice Netflix è: ${otpCode}`);
 
-    // Costruiamo la risposta
-    const responsePayload: any = { 
+    // 3. Applichiamo l'interfaccia creata al posto di "any"
+    const responsePayload: OtpResponsePayload = { 
       success: true, 
       message: "Codice generato e salvato con successo" 
     };
 
-    // TRUCCO PER LO SVILUPPO: Se sei in locale, restituisci il codice nel JSON 
-    // così il frontend o Postman/Insomnia possono leggerlo facilmente per i test.
-    // RICORDATI DI RIMUOVERE QUESTO CONTROLLO IN PRODUZIONE!
     if (process.env.NODE_ENV === "development") {
       responsePayload.devOtpCode = otpCode;
     }
