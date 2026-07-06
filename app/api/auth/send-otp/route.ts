@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Utente non trovato" }, { status: 404 });
     }
 
-    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const otpCode = Math.floor(1000 + Math.random() * 9000);
 
     const otpExpiry = new Date();
     otpExpiry.setMinutes(otpExpiry.getMinutes() + 15);
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     };
 
     if (process.env.NODE_ENV === "development") {
-      responsePayload.devOtpCode = otpCode;
+      responsePayload.devOtpCode = otpCode.toString();
     }
 
     return NextResponse.json(responsePayload);

@@ -2,37 +2,96 @@
 
 import React, { useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   // Stati per il controllo del flusso
-  const [step, setStep] = useState<"identifier" | "otp">("identifier"); // "identifier" o "otp"
+  const [step, setStep] = useState<"identifier" | "otp">("identifier");
   const [emailPhone, setEmailPhone] = useState("");
   const [otp, setOtp] = useState<string[]>(new Array(4).fill(""));
   const [helpExpanded, setHelpExpanded] = useState(false);
+  
+  // Stato per mostrare errori provenienti dal backend
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // Riferimenti per gli input del codice OTP
   const inputRefs = useRef<HTMLInputElement[]>([]);
 
-  // Gestione dell'invio dell'identificativo (Step 1)
-  const handleIdentifierSubmit = (e: React.FormEvent) => {
+  // --- STEP 1: Invia Email al Backend ---
+  const handleIdentifierSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(""); // Pulisci errori precedenti
+
     if (emailPhone.trim()) {
-      setStep("otp");
+      try {
+        const res = await fetch("/api/auth/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: emailPhone })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          if (data.devOtpCode) {
+            console.log("CODICE OTP DI TEST:", data.devOtpCode);
+          }
+          setStep("otp");
+        } else {
+          setErrorMessage(data.error || "Si è verificato un errore.");
+        }
+      } catch (err) {
+        console.error(err);
+        setErrorMessage("Errore di connessione al server.");
+      }
+    }
+  };
+
+  // --- STEP 2: Verifica Codice OTP al Backend ---
+  const verifyCode = async (completedOtp: string) => {
+    setErrorMessage("");
+    try {
+      const numericOtp = parseInt(completedOtp, 10);
+
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailPhone, otp: numericOtp })
+      });
+
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        router.push("/browse");
+      } else {
+        setErrorMessage(data.error || "Codice non valido.");
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Errore di connessione al server.");
     }
   };
 
   // Gestione del cambio dei singoli quadrati OTP
   const handleOtpChange = (element: HTMLInputElement, index: number) => {
-    const value = element.value.replace(/[^0-9]/g, ""); // Solo numeri
+    const value = element.value.replace(/[^0-9]/g, ""); 
     if (!value) return;
 
     const newOtp = [...otp];
-    newOtp[index] = value.substring(value.length - 1); // Prende solo l'ultimo carattere
+    newOtp[index] = value.substring(value.length - 1);
     setOtp(newOtp);
 
-    // Sposta il focus al campo successivo se compilato
     if (index < 3 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1].focus();
+    }
+
+    if (index === 3) {
+      const finalOtp = newOtp.join("");
+      if (finalOtp.length === 4) {
+        verifyCode(finalOtp);
+      }
     }
   };
 
@@ -43,7 +102,6 @@ export default function LoginPage() {
       newOtp[index] = "";
       setOtp(newOtp);
 
-      // Sposta il focus al campo precedente
       if (index > 0 && inputRefs.current[index - 1]) {
         inputRefs.current[index - 1].focus();
       }
@@ -62,9 +120,13 @@ export default function LoginPage() {
       <header className="w-full relative z-10 border-b border-white/10 py-5 bg-black/20 backdrop-blur-[1px]">
         <div className="max-w-[1024px] mx-auto px-4 sm:px-8">
           <Link href="/">
-            <img 
+            {/* COMPONENTE IMAGE CORRETTO */}
+            <Image
               src="https://occ.a.nflxso.net/dnmt/api/v6/iL4oJVDYZ8KLSrJ6eG2OwtghbfQ/AAAAAVBEN9I57czDc_uW4ZnDTNTb9hWvK70hYAqf0VNv_dsufIxZqfNclKrp7ugn5j0DkKCYy_4ncEpi6fJk1wpPuLO61r5YUWiEbVjxFpCESIWdJwAAOvAX.svg" 
               alt="NETFLIX" 
+              width={140}
+              height={32}
+              priority
               className="h-7 w-auto object-contain"
             />
           </Link>
@@ -75,6 +137,12 @@ export default function LoginPage() {
       <main className="flex-grow flex justify-center items-center py-12 px-4 relative z-10">
         <div className="w-full max-w-[440px]">
           
+          {errorMessage && (
+            <div className="bg-[#e87c03] text-white p-3 rounded mb-4 text-[14px]">
+              {errorMessage}
+            </div>
+          )}
+
           {step === "identifier" ? (
             /* Schermata Inserisci i tuoi dati */
             <>
@@ -122,20 +190,21 @@ export default function LoginPage() {
                 Inserisci il codice che ti abbiamo inviato per email
               </h1>
 
-              {/* Box riepilogo email con tasto Modifica */}
               <div className="w-full bg-[#333333]/90 rounded px-4 py-3.5 flex justify-between items-center mb-6">
                 <span className="text-[16px] text-white font-medium truncate mr-2">
                   {emailPhone || "fabio0442@gmail.com"}
                 </span>
                 <button 
-                  onClick={() => setStep("identifier")}
+                  onClick={() => {
+                    setErrorMessage("");
+                    setStep("identifier");
+                  }}
                   className="text-white underline text-[14px] font-bold shrink-0 hover:text-gray-300 transition-colors"
                 >
                   Modifica
                 </button>
               </div>
 
-              {/* Rettangoli OTP (Altezza aumentata a h-20, larghezza mantenuta a w-14) */}
               <div className="flex gap-4 justify-start mb-5">
                 {otp.map((data, index) => (
                   <input
@@ -157,7 +226,7 @@ export default function LoginPage() {
               <p className="text-[14px] text-[#a3a3a3] font-medium mt-1">
                 Non hai ricevuto un codice?{" "}
                 <button 
-                  onClick={() => console.log("Codice reinviato")}
+                  onClick={handleIdentifierSubmit}
                   className="text-white underline font-bold hover:text-gray-300"
                 >
                   Reinvia il codice.
