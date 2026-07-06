@@ -8,13 +8,13 @@ const prisma = new PrismaClient({ adapter });
 
 export async function getBrowseData(profileId?: number) {
     try {
-        // 1. Estrazione dati base
+        // 1. Estrazione catalogo generale
         const serie = await prisma.serie_tv.findMany();
         const film = await prisma.contenuti.findMany({
             where: { tipo: "film" }
         });
 
-        // 2. Estrazione "Top 10" simulate (ultimi 10 inserimenti)
+        // 2. Estrazione Top 10
         const topSeries = await prisma.serie_tv.findMany({
             take: 10,
             orderBy: { id_serie_tv: 'desc' }
@@ -25,19 +25,23 @@ export async function getBrowseData(profileId?: number) {
             orderBy: { id_contenuto: 'desc' }
         });
 
-        // 3. Estrazione "La mia lista" subordinata alla presenza del profileId
+        // 3. Estrazione "La mia lista" per lo specifico profilo
         let myList: Array<{ id: string; title: string; poster: string; type: string }> = [];
         
         if (profileId) {
+            // Recupera i film salvati dal profilo
             const savedMovies = await prisma.salva_film.findMany({
                 where: { id_profilo: profileId },
                 include: { contenuti: true }
             });
+            
+            // Recupera le serie salvate dal profilo
             const savedSeries = await prisma.salva_serie.findMany({
                 where: { id_profilo: profileId },
                 include: { serie_tv: true }
             });
 
+            // Normalizza i film salvati
             const formattedSavedMovies = savedMovies.map(sm => ({
                 id: sm.contenuti.id_contenuto.toString(),
                 title: sm.contenuti.titolo_contenuto,
@@ -45,6 +49,7 @@ export async function getBrowseData(profileId?: number) {
                 type: "film"
             }));
 
+            // Normalizza le serie salvate
             const formattedSavedSeries = savedSeries.map(ss => ({
                 id: ss.serie_tv.id_serie_tv.toString(),
                 title: ss.serie_tv.titolo_serie_tv,
@@ -52,10 +57,11 @@ export async function getBrowseData(profileId?: number) {
                 type: "serie"
             }));
 
+            // Unifica i contenuti salvati in un unico carosello
             myList = [...formattedSavedMovies, ...formattedSavedSeries];
         }
 
-        // 4. Normalizzazione degli array generici
+        // 4. Normalizzazione del resto del catalogo
         const formattedSeries = serie.map(s => ({
             id: s.id_serie_tv.toString(),
             title: s.titolo_serie_tv,
@@ -73,26 +79,23 @@ export async function getBrowseData(profileId?: number) {
         const formattedTopSeries = topSeries.map(s => ({
             id: s.id_serie_tv.toString(),
             title: s.titolo_serie_tv,
-            description: s.descrizione || "", // Aggiunta
-            poster: s.img_hero || "https://picsum.photos/1920/1080?random=5", // Preferibile usare immagini orizzontali per l'Hero
+            poster: s.img_hero || "https://picsum.photos/640/360?random=5",
             type: "serie"
         }));
 
         const formattedTopMovies = topMovies.map(f => ({
             id: f.id_contenuto.toString(),
             title: f.titolo_contenuto,
-            description: f.descrizione || "", // Aggiunta
-            poster: f.copertina_url || "https://picsum.photos/1920/1080?random=6",
+            poster: f.copertina_url || "https://picsum.photos/640/360?random=6",
             type: "film"
         }));
 
-        // 5. Restituzione del blocco dati formattato
         return { 
             series: formattedSeries, 
             movies: formattedMovies,
             topSeries: formattedTopSeries,
             topMovies: formattedTopMovies,
-            myList: myList
+            myList: myList // Restituisce l'array unificato
         };
 
     } catch (error) {
@@ -100,6 +103,7 @@ export async function getBrowseData(profileId?: number) {
         return { series: [], movies: [], topSeries: [], topMovies: [], myList: [] };
     }
 }
+
 
 
 export async function getMediaDetails(id: string, type: string) {
@@ -159,3 +163,4 @@ export async function getMediaDetails(id: string, type: string) {
         return null;
     }
 }
+
