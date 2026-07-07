@@ -54,16 +54,13 @@ const plans = [
 ];
 
 export default function RegisterPage() {
-  // Aggiunto lo step "regform" per la creazione della password
-  const [currentStep, setCurrentStep] = useState<"info" | "plans" | "accountSetup" | "regform">("info");
+  const [currentStep, setCurrentStep] = useState<"info" | "plans" | "accountSetup" | "regform" | "paymentSetup">("info");
   
-  // Stati per i dati dell'utente
   const [selectedPlanId, setSelectedPlanId] = useState("5200"); 
-  const [email, setEmail] = useState(""); // In un'app reale potresti pre-compilarla dalla sessione
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [specialOffers, setSpecialOffers] = useState(false);
 
-  // Gestori della navigazione
   const handlePlanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentStep("accountSetup");
@@ -75,8 +72,7 @@ export default function RegisterPage() {
 
   const handleRegistrationSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Dati di registrazione inviati:", { email, password, selectedPlanId, specialOffers });
-    // Qui andrà la chiamata fetch al tuo backend Prisma per creare l'utente
+    setCurrentStep("paymentSetup");
   };
 
   return (
@@ -137,14 +133,14 @@ export default function RegisterPage() {
 
         {/* --- STEP 2: SELEZIONE PIANI --- */}
         {currentStep === "plans" && (
-          <div className="w-full max-w-[960px] flex flex-col">
+          <div className="w-full max-w-[850px] flex flex-col"> {/* Ridotto max-w per rettangoli più piccoli */}
             <div className="mb-6">
               <p className="text-[13px] text-gray-700 font-medium mb-1">Passaggio <b>1</b> di <b>3</b></p>
               <h1 className="text-3xl font-bold">Scegli il piano più adatto a te</h1>
             </div>
 
             <form onSubmit={handlePlanSubmit} className="flex flex-col">
-              <div className="flex flex-col md:flex-row gap-4 mb-8">
+              <div className="flex flex-col md:flex-row gap-3 mb-8"> {/* Ridotto gap a 3 */}
                 {plans.map((plan) => {
                   const isSelected = selectedPlanId === plan.id;
                   
@@ -152,7 +148,7 @@ export default function RegisterPage() {
                     <label 
                       key={plan.id}
                       htmlFor={`select-${plan.id}`}
-                      className={`flex-1 relative border rounded-[14px] flex flex-col cursor-pointer transition-all duration-200 overflow-hidden ${
+                      className={`flex-1 relative border rounded-2xl flex flex-col cursor-pointer transition-all duration-200 overflow-hidden ${ // rounded-2xl per tondeggianti
                         isSelected 
                           ? "border-[#737373] shadow-md ring-1 ring-[#737373]" 
                           : "border-gray-300 hover:border-gray-400"
@@ -168,28 +164,28 @@ export default function RegisterPage() {
                         className="sr-only" 
                       />
 
-                      <div className="relative w-full p-4 pb-6 text-white" style={plan.bgStyle}>
-                        <span data-uia="plan-name" className="block text-[22px] font-bold leading-tight">
+                      <div className="relative w-full p-3 pb-5 text-white" style={plan.bgStyle}> {/* Padding ridotto */}
+                        <span data-uia="plan-name" className="block text-[19px] font-bold leading-tight"> {/* Font leggermente più piccolo */}
                           {plan.name}
                         </span>
-                        <span className="block text-[15px] font-medium opacity-90 mt-1">
+                        <span className="block text-[14px] font-medium opacity-90 mt-0.5">
                           {plan.subtitle}
                         </span>
                         
                         {isSelected && (
-                          <div className="absolute bottom-4 right-4">
-                            <svg width="24" height="22" viewBox="0 0 24 22" fill="none">
+                          <div className="absolute bottom-3 right-3"> {/* Spostato leggermente */}
+                            <svg width="20" height="18" viewBox="0 0 24 22" fill="none">
                               <path fillRule="evenodd" clipRule="evenodd" d="M12.0183 21.0833C17.7761 21.0833 22.4438 16.5688 22.4438 11C22.4438 5.43112 17.7761 0.916656 12.0183 0.916656C6.26044 0.916656 1.59277 5.43112 1.59277 11C1.59277 16.5688 6.26044 21.0833 12.0183 21.0833ZM11.7407 14.3982L17.4273 8.89817L16.087 7.60181L11.0705 12.4536L8.89738 10.3518L7.55702 11.6482L10.4004 14.3982L11.0705 15.0463L11.7407 14.3982Z" fill="white" />
                             </svg>
                           </div>
                         )}
                       </div>
 
-                      <div className="px-4 py-2 flex flex-col flex-grow bg-white">
+                      <div className="px-3 py-1 flex flex-col flex-grow bg-white"> {/* Padding ridotto */}
                         {plan.features.map((feature, idx) => (
-                          <div key={idx} className="py-[14px] border-b border-gray-200 last:border-0">
-                            <div className="text-[13px] font-medium text-[#737373] leading-snug">{feature.label}</div>
-                            <div className="text-[16px] font-bold text-[#333] mt-1">{feature.value}</div>
+                          <div key={idx} className="py-2.5 border-b border-gray-100 last:border-0"> {/* Padding riga ridotto */}
+                            <div className="text-[11px] font-medium text-[#737373] leading-snug">{feature.label}</div>
+                            <div className="text-[14px] font-bold text-[#333] mt-0.5">{feature.value}</div>
                           </div>
                         ))}
                       </div>
@@ -264,7 +260,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* --- STEP 4: FORM DI REGISTRAZIONE (image_ebac89.png) --- */}
+        {/* --- STEP 4: FORM DI REGISTRAZIONE --- */}
         {currentStep === "regform" && (
           <div className="max-w-[440px] w-full flex flex-col items-center mt-8 mb-12">
             <div className="w-full text-left">
@@ -281,7 +277,6 @@ export default function RegisterPage() {
 
               <form onSubmit={handleRegistrationSubmit} className="flex flex-col w-full">
                 
-                {/* Input Email con Bordo Verde per simulare la validazione */}
                 <div className="relative w-full mb-4 bg-white rounded border border-[#2b9045] focus-within:ring-1 focus-within:ring-[#2b9045]">
                   <input
                     type="email"
@@ -300,7 +295,6 @@ export default function RegisterPage() {
                   </label>
                 </div>
 
-                {/* Input Password con Bordo Grigio standard */}
                 <div className="relative w-full bg-white rounded border border-gray-400 focus-within:ring-1 focus-within:ring-blue-600 focus-within:border-blue-600">
                   <input
                     type="password"
@@ -319,7 +313,6 @@ export default function RegisterPage() {
                   </label>
                 </div>
 
-                {/* Checkbox Offerte */}
                 <label className="flex items-start gap-3 mt-4 mb-6 cursor-pointer">
                   <input 
                     type="checkbox" 
@@ -332,19 +325,97 @@ export default function RegisterPage() {
                   </span>
                 </label>
 
-                {/* Pulsante Avanti a larghezza piena */}
                 <button 
                   type="submit"
                   className="w-full bg-[#e50914] text-white text-center py-4 rounded font-bold text-xl hover:bg-[#f6121d] transition-colors"
                 >
                   Avanti
                 </button>
-
               </form>
             </div>
           </div>
         )}
 
+        {/* --- STEP 5: SELEZIONE METODO DI PAGAMENTO --- */}
+        {currentStep === "paymentSetup" && (
+          <div className="w-full max-w-[440px] flex flex-col mx-auto text-left mb-16">
+            
+            {/* Lucchetto Rosso - Allineato a sinistra */}
+            <div className="pt-6 pb-8 flex justify-start">
+              <Image 
+                alt="" 
+                src="https://assets.nflxext.com/ffe/siteui/acquisition/simplicity/Lock.png" 
+                width={50} 
+                height={50} 
+              />
+            </div>
+
+            <div className="flex flex-col gap-1 mb-4">
+              <span className="text-[13px] text-gray-800">Passaggio <b>3</b> di <b>3</b></span>
+              <h1 className="text-[32px] font-bold text-gray-900 leading-tight tracking-tight">
+                Scegli come pagare
+              </h1>
+            </div>
+
+            <div className="flex flex-col gap-4 mb-4">
+              <p className="text-[16px] text-[#333] leading-snug">
+                Il pagamento è crittografato e puoi modificare il metodo di pagamento in qualsiasi momento.
+              </p>
+              <div className="text-[16px] font-bold text-[#333] leading-snug">
+                <p>Massima protezione, massima tranquillità.</p>
+                <p>Disdici facilmente online.</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end items-center gap-1.5 pt-6 pb-1">
+              <p className="text-[13px] font-medium text-[#333]">Crittografia end-to-end</p>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 16 16" className="text-[#ffb53f]">
+                <path fill="currentColor" fillRule="evenodd" d="M4 4a4 4 0 0 1 8 0v1h1a1 1 0 0 1 1 1v6.72a.92.92 0 0 1-.765.926C12.316 13.793 10.57 14 8 14s-4.316-.207-5.234-.354A.92.92 0 0 1 2 12.719V6a1 1 0 0 1 1-1h1zm6.5 0v1h-5V4a2.5 2.5 0 0 1 5 0m-7 2.5v5.738c.93.124 2.43.262 4.5.262s3.57-.138 4.5-.262V6.5zM7.25 8v3h1.5V8z" clipRule="evenodd"></path>
+              </svg>
+            </div>
+
+            {/* Bottoni - Più alti (py-5) e più tondeggianti (rounded-[6px]) */}
+            <div className="flex flex-col gap-[8px]">
+              
+              <button className="w-full flex items-center justify-between border border-gray-300 rounded-[6px] px-4 py-5 hover:bg-gray-50 transition-colors group">
+                <div className="flex items-center gap-[10px]">
+                  <span className="text-[16px] text-[#333]">Carta di credito o di debito</span>
+                  <div className="flex items-center gap-1">
+                    <Image src="https://assets.nflxext.com/siteui/acquisition/payment/ffe/paymentpicker/VISA@2x.png" alt="VISA" width={39} height={25} />
+                    <Image src="https://assets.nflxext.com/siteui/acquisition/payment/ffe/paymentpicker/MASTERCARD@2x.png" alt="Mastercard" width={39} height={25} />
+                    <Image src="https://assets.nflxext.com/siteui/acquisition/payment/ffe/paymentpicker/AMEX@2x.png" alt="Amex" width={39} height={25} />
+                  </div>
+                </div>
+                <svg className="w-6 h-6 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+
+              <button className="w-full flex items-center justify-between border border-gray-300 rounded-[6px] px-4 py-5 hover:bg-gray-50 transition-colors group">
+                <div className="flex items-center gap-[10px]">
+                  <span className="text-[16px] text-[#333]">Portafoglio digitale</span>
+                  <Image src="https://assets.nflxext.com/siteui/acquisition/payment/ffe/paymentpicker/SATISPAY@2x.png" alt="Satispay" width={39} height={25} />
+                </div>
+                <svg className="w-6 h-6 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+
+              <button className="w-full flex items-center justify-between border border-gray-300 rounded-[6px] px-4 py-5 hover:bg-gray-50 transition-colors group">
+                <div className="flex items-center gap-[10px]">
+                  <span className="text-[16px] text-[#333]">PayPal</span>
+                  <Image src="https://assets.nflxext.com/siteui/acquisition/payment/ffe/paymentpicker/PAYPAL@2x.png" alt="PayPal" width={39} height={25} />
+                </div>
+                <svg className="w-6 h-6 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+
+              <button className="w-full flex items-center justify-between border border-gray-300 rounded-[6px] px-4 py-5 hover:bg-gray-50 transition-colors group">
+                <div className="flex items-center gap-[10px]">
+                  <span className="text-[16px] text-[#333]">Codice regalo</span>
+                  <Image src="https://assets.nflxext.com/siteui/acquisition/payment/ffe/paymentpicker/GIFT_CODE@2x.png" alt="Gift" width={39} height={25} />
+                </div>
+                <svg className="w-6 h-6 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+
+            </div>
+          </div>
+        )}
       </main>
       
       {/* FOOTER */}
