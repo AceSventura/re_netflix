@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import Hls from "hls.js";
 import { getMediaDetails } from "@/app/actions/media";
+import { VolumeX, Volume2, Play, Info, Loader2 } from "lucide-react";
 
 interface HeroProps {
     item: {
@@ -24,13 +26,12 @@ export default function Hero({ item }: HeroProps) {
     const [isMuted, setIsMuted] = useState(true);
     const [streamUrl, setStreamUrl] = useState<string | null>(null);
 
-    // 1. Risoluzione asincrona dell'URL (Corretta per Case-Sensitivity e logica Serie vs Film)
+    // 1. Risoluzione asincrona dell'URL
     useEffect(() => {
         const resolveStreamUrl = async () => {
             try {
                 let targetId = item.id;
                 
-                // Ricerca esplicita della parola "serie" per evitare i falsi positivi
                 const isSerie = item.type?.toLowerCase().includes("serie");
 
                 if (isSerie) {
@@ -38,7 +39,7 @@ export default function Hero({ item }: HeroProps) {
                     if (details?.episodes && details.episodes.length > 0) {
                         targetId = details.episodes[0].id;
                     } else {
-                        return; // Nessun episodio, mostra il poster statico
+                        return; 
                     }
                 }
 
@@ -54,12 +55,10 @@ export default function Hero({ item }: HeroProps) {
         resolveStreamUrl();
     }, [item.id, item.type]);
 
-    // 2. Inizializzazione di hls.js (Indipendente dall'audio per non riavviare il video)
+    // 2. Inizializzazione di hls.js
     useEffect(() => {
         const video = videoRef.current;
         if (!video || !streamUrl) return;
-
-        video.defaultMuted = true;
 
         let hls: Hls;
 
@@ -78,7 +77,8 @@ export default function Hero({ item }: HeroProps) {
 
             hls.on(Hls.Events.ERROR, (event, data) => {
                 if (data.fatal) {
-                    console.error("Errore fatale HLS:", data.type, data.details);
+                    console.warn(`[Hero] Video in background non disponibile: ${data.type} - ${data.details}`);
+                    hls.destroy();
                 }
             });
         } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
@@ -90,28 +90,16 @@ export default function Hero({ item }: HeroProps) {
 
         return () => {
             if (hls) {
-                // 1. Ferma immediatamente i download di rete in corso
                 hls.stopLoad();
-                // 2. Scollega l'istanza dal tag video
                 hls.detachMedia();
-                // 3. Distrugge l'istanza in sicurezza
                 hls.destroy();
             }
-            
-            // 4. Pulizia nativa del DOM per il tag video (Previene ghost-fetching in Safari)
             if (video) {
                 video.removeAttribute('src');
                 video.load();
             }
         };
     }, [streamUrl]);
-
-    // 3. Gestione reattiva dell'audio 
-    useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.muted = isMuted;
-        }
-    }, [isMuted]);
 
     // Instradamento manuale per il player a schermo intero
     const handlePlay = async () => {
@@ -122,7 +110,6 @@ export default function Hero({ item }: HeroProps) {
             const isSerie = item.type?.toLowerCase().includes("serie");
 
             if (!isSerie) {
-                // Passiamo il parametro type nell'URL in modo dinamico
                 router.push(`/watch/${item.id}?type=${item.type}`);
             } else {
                 const details = await getMediaDetails(item.id, item.type);
@@ -146,10 +133,12 @@ export default function Hero({ item }: HeroProps) {
         <section className="relative w-full h-[70vh] mb-12 bg-[#141414]">
             {/* BACKGROUND IMAGE FALLBACK */}
             {!streamUrl && (
-                <img 
+                <Image 
                     src={item.poster} 
                     alt={item.title} 
-                    className="absolute inset-0 w-full h-full object-cover opacity-60"
+                    fill
+                    priority
+                    className="object-cover opacity-60"
                 />
             )}
 
@@ -160,12 +149,13 @@ export default function Hero({ item }: HeroProps) {
                     className="w-full h-full object-cover"
                     loop
                     playsInline
+                    muted={isMuted} // Legame imperativo con lo stato React
                 />
             )}
 
             {/* OVERLAY OSCURANTE */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-[#141414]/40 to-transparent w-2/3"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-[#141414] via-[#141414]/20 to-transparent"></div>
+            <div className="absolute inset-0 bg-linear-to-r from-[#141414] via-[#141414]/40 to-transparent w-2/3"></div>
 
             {/* CONTENUTO TESTO */}
             <div className="absolute bottom-20 left-10 text-white max-w-xl z-10">
@@ -181,14 +171,16 @@ export default function Hero({ item }: HeroProps) {
                     <button 
                         onClick={handlePlay}
                         disabled={isLoading}
-                        className="bg-white text-black px-6 py-3 rounded-md font-semibold hover:bg-gray-300 transition disabled:opacity-50 flex items-center justify-center min-w-[100px]"
+                        className="bg-white text-black px-6 py-3 rounded-md font-semibold hover:bg-gray-300 transition disabled:opacity-50 flex items-center justify-center min-w-37.5 gap-2"
                     >
-                        {isLoading ? "⏳..." : "▶ Play"}
+                        {isLoading ? <Loader2 className="animate-spin text-black" size={24} /> : <Play fill="black" size={24} />}
+                        {isLoading ? "Caricamento" : "Riproduci"}
                     </button>
 
                     <Link href={`?id=${item.id}&type=${item.type}`} scroll={false}>
-                        <button className="bg-gray-700/70 text-white px-6 py-3 rounded-md font-semibold hover:bg-gray-600 transition">
-                            ℹ More Info
+                        <button className="bg-gray-700/70 text-white px-6 py-3 rounded-md font-semibold hover:bg-gray-600 transition flex items-center justify-center gap-2">
+                            <Info size={24} />
+                            Altre info
                         </button>
                     </Link>
                 </div>
@@ -196,14 +188,17 @@ export default function Hero({ item }: HeroProps) {
 
             {/* PULSANTE GESTIONE AUDIO */}
             {streamUrl && (
-                <div className="absolute bottom-20 right-10 z-10">
+                <div className="absolute bottom-20 right-10 z-10 flex items-center gap-4">
                     <button 
                         onClick={toggleMute}
                         className="p-3 rounded-full border border-gray-400 bg-black/20 text-white hover:bg-white/10 transition flex items-center justify-center"
                         aria-label={isMuted ? "Attiva audio" : "Disattiva audio"}
                     >
-                        {isMuted ? "🔇" : "🔊"}
+                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
                     </button>
+                    <div className="border-l-4 border-white/80 bg-black/40 text-white text-lg py-1 px-4 rounded-l-md shadow-md backdrop-blur-sm select-none hidden md:block">
+                        T
+                    </div>
                 </div>
             )}
         </section>

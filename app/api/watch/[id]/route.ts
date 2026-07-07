@@ -29,11 +29,8 @@ export async function GET(
                     include: {
                         assets_audio: {
                             include: {
-                                parlato_in: {
-                                    include: {
-                                        lingue: true
-                                    }
-                                }
+                                // CORREZIONE 1: Relazione diretta eliminando parlato_in
+                                lingue: true 
                             }
                         }
                     }
@@ -53,7 +50,8 @@ export async function GET(
 
         if (audioAssets.length > 0) {
             audioAssets.forEach((audio, index) => {
-                const nomeLingua = audio.parlato_in[0]?.lingue?.nome || `Lingua_${index + 1}`;
+                // CORREZIONE 2: Accesso diretto ad audio.lingue.nome
+                const nomeLingua = audio.lingue?.nome || `Lingua_${index + 1}`;
                 const codiceLingua = nomeLingua.substring(0, 2).toLowerCase();
                 const isDefault = index === 0 ? "YES" : "NO";
 
@@ -75,7 +73,6 @@ export async function GET(
             status: 200,
             headers: {
                 "Content-Type": "application/vnd.apple.mpegurl",
-                // Direttive Cache-Control rinforzate
                 "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
                 "Pragma": "no-cache",
                 "Expires": "0",

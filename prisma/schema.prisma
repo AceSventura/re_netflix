@@ -20,11 +20,12 @@ model artisti {
 }
 
 model assets_audio {
-  id_asset_audio Int          @id @default(autoincrement())
+  id_asset_audio Int       @id @default(autoincrement())
   codec          String?
   url_traccia    String
+  id_lingua      Int       @default(2)
+  lingue         lingue    @relation(fields: [id_lingua], references: [id_lingua], onDelete: NoAction, onUpdate: NoAction)
   include        include[]
-  parlato_in     parlato_in[]
 }
 
 model assets_video {
@@ -62,7 +63,7 @@ model contenuti {
   tipo             String
   id_stagione      Int?
   copertina_url    String?       
-  vposter_url       String?
+  vposter_url      String?
   classificato_in  classificato_in[]
   codificato       codificato[]
   stagioni         stagioni?         @relation(fields: [id_stagione], references: [id_stagione], onDelete: NoAction, onUpdate: NoAction)
@@ -121,10 +122,10 @@ model licenze {
 }
 
 model lingue {
-  id_lingua   Int           @id @default(autoincrement())
-  nome        String
-  parlato_in  parlato_in[]
-  tradotto_in tradotto_in[]
+  id_lingua    Int            @id @default(autoincrement())
+  nome         String
+  assets_audio assets_audio[]
+  sottotitoli  sottotitoli[]
 }
 
 model liste {
@@ -134,15 +135,6 @@ model liste {
   profili      profili   @relation(fields: [id_profilo], references: [id_profilo], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([id_profilo, id_contenuto])
-}
-
-model parlato_in {
-  id_lingua      Int
-  id_asset_audio Int
-  assets_audio   assets_audio @relation(fields: [id_asset_audio], references: [id_asset_audio], onDelete: NoAction, onUpdate: NoAction)
-  lingue         lingue       @relation(fields: [id_lingua], references: [id_lingua], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([id_lingua, id_asset_audio])
 }
 
 model partecipa {
@@ -193,7 +185,7 @@ model serie_tv {
   descrizione     String?
   anno_inizio     Int?
   img_hero        String?
-  vposter_url      String?
+  vposter_url     String?
   salva_serie     salva_serie[]
   stagioni        stagioni[]
   valutazioni     valutazioni[]
@@ -221,13 +213,14 @@ model sottoscrizioni {
 }
 
 model sottotitoli {
-  id_sub       Int           @id @default(autoincrement())
+  id_sub       Int       @id @default(autoincrement())
   url_sub      String
   formato      String?
   tipo_traccia String?
   id_contenuto Int
-  contenuti    contenuti     @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction)
-  tradotto_in  tradotto_in[]
+  id_lingua    Int       @default(2)
+  contenuti    contenuti @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction)
+  lingue       lingue    @relation(fields: [id_lingua], references: [id_lingua], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model stagioni {
@@ -237,15 +230,6 @@ model stagioni {
   id_serie_tv     Int
   contenuti       contenuti[]
   serie_tv        serie_tv    @relation(fields: [id_serie_tv], references: [id_serie_tv], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model tradotto_in {
-  id_lingua   Int
-  id_sub      Int
-  sottotitoli sottotitoli @relation(fields: [id_sub], references: [id_sub], onDelete: NoAction, onUpdate: NoAction)
-  lingue      lingue      @relation(fields: [id_lingua], references: [id_lingua], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([id_lingua, id_sub])
 }
 
 model utenti {

@@ -116,7 +116,7 @@ export default function WatchPage({ params }: PageProps) {
 
         hls.on(Hls.Events.ERROR, (event, data) => {
             if (data.fatal) {
-                console.error("Errore fatale HLS:", data);
+                console.error("Errore fatale HLS:", data.type, data.details);
                 setError("Impossibile caricare il flusso multimediale.");
                 hls.destroy();
             }
