@@ -29,7 +29,6 @@ export async function GET(
                     include: {
                         assets_audio: {
                             include: {
-                                // CORREZIONE 1: Relazione diretta eliminando parlato_in
                                 lingue: true 
                             }
                         }
