@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { registerUser } from "@/app/actions/auth";
 
 const plans = [
   {
@@ -70,9 +71,21 @@ export default function RegisterPage() {
     setCurrentStep("regform");
   };
 
-  const handleRegistrationSubmit = (e: React.FormEvent) => {
+  const handleRegistrationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentStep("paymentSetup");
+    
+    // Collegamento backend
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("password", password);
+
+    const result = await registerUser(formData);
+
+    if (result.success) {
+      setCurrentStep("paymentSetup");
+    } else {
+      alert(result.message || "Errore durante la registrazione.");
+    }
   };
 
   return (
@@ -133,14 +146,14 @@ export default function RegisterPage() {
 
         {/* --- STEP 2: SELEZIONE PIANI --- */}
         {currentStep === "plans" && (
-          <div className="w-full max-w-[850px] flex flex-col"> {/* Ridotto max-w per rettangoli più piccoli */}
+          <div className="w-full max-w-[850px] flex flex-col">
             <div className="mb-6">
               <p className="text-[13px] text-gray-700 font-medium mb-1">Passaggio <b>1</b> di <b>3</b></p>
               <h1 className="text-3xl font-bold">Scegli il piano più adatto a te</h1>
             </div>
 
             <form onSubmit={handlePlanSubmit} className="flex flex-col">
-              <div className="flex flex-col md:flex-row gap-3 mb-8"> {/* Ridotto gap a 3 */}
+              <div className="flex flex-col md:flex-row gap-3 mb-8">
                 {plans.map((plan) => {
                   const isSelected = selectedPlanId === plan.id;
                   
@@ -148,7 +161,7 @@ export default function RegisterPage() {
                     <label 
                       key={plan.id}
                       htmlFor={`select-${plan.id}`}
-                      className={`flex-1 relative border rounded-2xl flex flex-col cursor-pointer transition-all duration-200 overflow-hidden ${ // rounded-2xl per tondeggianti
+                      className={`flex-1 relative border rounded-2xl flex flex-col cursor-pointer transition-all duration-200 overflow-hidden ${
                         isSelected 
                           ? "border-[#737373] shadow-md ring-1 ring-[#737373]" 
                           : "border-gray-300 hover:border-gray-400"
@@ -164,8 +177,8 @@ export default function RegisterPage() {
                         className="sr-only" 
                       />
 
-                      <div className="relative w-full p-3 pb-5 text-white" style={plan.bgStyle}> {/* Padding ridotto */}
-                        <span data-uia="plan-name" className="block text-[19px] font-bold leading-tight"> {/* Font leggermente più piccolo */}
+                      <div className="relative w-full p-3 pb-5 text-white" style={plan.bgStyle}>
+                        <span data-uia="plan-name" className="block text-[19px] font-bold leading-tight">
                           {plan.name}
                         </span>
                         <span className="block text-[14px] font-medium opacity-90 mt-0.5">
@@ -173,7 +186,7 @@ export default function RegisterPage() {
                         </span>
                         
                         {isSelected && (
-                          <div className="absolute bottom-3 right-3"> {/* Spostato leggermente */}
+                          <div className="absolute bottom-3 right-3">
                             <svg width="20" height="18" viewBox="0 0 24 22" fill="none">
                               <path fillRule="evenodd" clipRule="evenodd" d="M12.0183 21.0833C17.7761 21.0833 22.4438 16.5688 22.4438 11C22.4438 5.43112 17.7761 0.916656 12.0183 0.916656C6.26044 0.916656 1.59277 5.43112 1.59277 11C1.59277 16.5688 6.26044 21.0833 12.0183 21.0833ZM11.7407 14.3982L17.4273 8.89817L16.087 7.60181L11.0705 12.4536L8.89738 10.3518L7.55702 11.6482L10.4004 14.3982L11.0705 15.0463L11.7407 14.3982Z" fill="white" />
                             </svg>
@@ -181,9 +194,9 @@ export default function RegisterPage() {
                         )}
                       </div>
 
-                      <div className="px-3 py-1 flex flex-col flex-grow bg-white"> {/* Padding ridotto */}
+                      <div className="px-3 py-1 flex flex-col flex-grow bg-white">
                         {plan.features.map((feature, idx) => (
-                          <div key={idx} className="py-2.5 border-b border-gray-100 last:border-0"> {/* Padding riga ridotto */}
+                          <div key={idx} className="py-2.5 border-b border-gray-100 last:border-0">
                             <div className="text-[11px] font-medium text-[#737373] leading-snug">{feature.label}</div>
                             <div className="text-[14px] font-bold text-[#333] mt-0.5">{feature.value}</div>
                           </div>

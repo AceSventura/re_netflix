@@ -122,10 +122,10 @@ model licenze {
 }
 
 model lingue {
-  id_lingua    Int            @id @default(autoincrement())
-  nome         String
-  assets_audio assets_audio[]
-  sottotitoli  sottotitoli[]
+  id_lingua   Int           @id @default(autoincrement())
+  nome        String
+  parlato_in  parlato_in[]
+  tradotto_in tradotto_in[]
 }
 
 model liste {
@@ -239,6 +239,7 @@ model utenti {
   email          String           @unique(map: "sqlite_autoindex_utenti_1")
   data_nascita   DateTime
   PASSWORD       String
+  createdAt      DateTime         @default(now())
   otpCode        Int?
   otpExpiry      DateTime?
   profili        profili[]
