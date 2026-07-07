@@ -1,77 +1,64 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { getUserProfiles, getActiveProfile } from "@/app/actions/profiles";
+import type { profili } from "@prisma/client";
 
-// Tipi allineati allo schema Prisma
-export interface Profile {
-  id_profilo: number;
-  nome_profilo: string;
-  avatar_url: string | null;
-}
+export type Profile = profili;
 
 interface ProfileContextType {
-  profiles: Profile[];
-  currentProfile: Profile | null;
-  isLoading: boolean;
-  error: string | null;
-  selectProfile: (profile: Profile) => void;
-  fetchProfiles: () => Promise<void>;
+    profiles: Profile[];
+    selectedProfile: Profile | null;
+    selectProfile: (profile: Profile | null) => void;
+    refreshProfiles: () => Promise<void>;
+    isLoading: boolean;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 export const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+    const [profiles, setProfiles] = useState<Profile[]>([]);
+    const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfiles = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/profiles");
-      if (res.status === 401) {
-        router.push("/login");
-        return;
-      }
-      
-      const data = await res.json();
-      if (data.success) {
-        setProfiles(data.profiles);
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError("Errore di rete durante il caricamento dei profili: " + (err as Error).message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const fetchAll = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [profilesRes, activeRes] = await Promise.all([
+                getUserProfiles(),
+                getActiveProfile(),
+            ]);
 
-  useEffect(() => {
-    fetchProfiles();
-  }, []);
+            setProfiles(profilesRes.success && profilesRes.profiles ? profilesRes.profiles : []);
+            setSelectedProfile(activeRes.success ? activeRes.profile ?? null : null);
+        } catch (error) {
+            console.error("Errore nel caricamento profili:", error);
+            setProfiles([]);
+            setSelectedProfile(null);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
-  const selectProfile = (profile: Profile) => {
-    setCurrentProfile(profile);
-    sessionStorage.setItem("active_profile_id", profile.id_profilo.toString());
-    router.push("/browse");
-  };
+    useEffect(() => {
+        fetchAll();
+    }, [fetchAll]);
 
-  return (
-    <ProfileContext.Provider value={{ profiles, currentProfile, isLoading, error, selectProfile, fetchProfiles }}>
-      {children}
-    </ProfileContext.Provider>
-  );
+    const selectProfile = (profile: Profile | null) => {
+        setSelectedProfile(profile);
+    };
+
+    return (
+        <ProfileContext.Provider
+            value={{ profiles, selectedProfile, selectProfile, refreshProfiles: fetchAll, isLoading }}
+        >
+            {children}
+        </ProfileContext.Provider>
+    );
 };
 
 export const useProfiles = () => {
-  const context = useContext(ProfileContext);
-  if (context === undefined) {
-    throw new Error("useProfiles deve essere usato dentro un ProfileProvider");
-  }
-  return context;
+    const context = useContext(ProfileContext);
+    if (!context) throw new Error("useProfiles deve essere usato dentro ProfileProvider");
+    return context;
 };

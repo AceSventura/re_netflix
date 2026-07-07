@@ -1,26 +1,23 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bebas_Neue } from "next/font/google";
 import Link from "next/link";
-import Image from "next/image"; // Importato per ottimizzazione
-import { Search, Bell, ChevronDown, Pencil, UserRoundPlus, User, HelpCircle } from "lucide-react";
+import Image from "next/image";
+import { Search, Bell, ChevronDown, Pencil, User, HelpCircle } from "lucide-react";
 
-import { useProfiles } from "@/context/ProfileContext";
+import { logoutUser } from "@/app/actions/auth";
+import { setActiveProfile } from "@/app/actions/profiles";
+import { useProfiles, type Profile } from "@/context/ProfileContext";
 
-const bebas = Bebas_Neue({
-    subsets: ["latin"],
-    weight: "400",
-});
+const AVATAR_FALLBACK = "/avatars/1.jpg";
 
 export default function Navbar() {
-    // 1. Estraiamo i dati dal Context
+    const router = useRouter();
     const { profiles, selectProfile, selectedProfile } = useProfiles();
     const pathname = usePathname();
-    
-    // 2. Filtriamo per mostrare gli ALTRI profili nel menu a tendina
-    const otherProfiles = profiles.filter(p => p.id !== selectedProfile?.id);
+
+    const otherProfiles = profiles.filter((profile) => profile.id_profilo !== selectedProfile?.id_profilo);
 
     const navLinks = [
         { name: "Home", href: "/browse" },
@@ -41,13 +38,42 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Se per qualche motivo il profilo non è ancora caricato, evitiamo crash
+    const handleProfileSwitch = async (profile: Profile) => {
+        try {
+            const res = await setActiveProfile(profile.id_profilo);
+            if (res.success) {
+                selectProfile(profile);
+                router.push("/browse");
+                router.refresh();
+            }
+        } catch (error) {
+            console.error("Errore nel cambio profilo:", error);
+        }
+    };
+
+    const handleManageProfiles = () => {
+        router.push("/profiles");
+    };
+
+    const handleLogout = async () => {
+        try {
+            const res = await logoutUser();
+            if (res.success) {
+                selectProfile(null);
+                router.push("/login");
+                router.refresh();
+            }
+        } catch (error) {
+            console.error("Errore nel logout:", error);
+        }
+    };
+
     if (!selectedProfile) return null;
 
     return (
         <nav
             className={`fixed top-0 w-full z-50 px-4 md:px-12 py-4 flex items-center justify-between transition-colors duration-500 ${
-                isScrolled ? "bg-[#141414]" : "bg-gradient-to-b from-black/80 to-transparent"
+                isScrolled ? "bg-[#141414]" : "bg-linear-to-b from-black/80 to-transparent"
             }`}
         >
             {/* GRUPPO SINISTRA */}
@@ -96,8 +122,8 @@ export default function Navbar() {
                     <div className="flex items-center gap-2 cursor-pointer group py-2">
                         <div className="w-8 h-8 rounded overflow-hidden relative">
                             <Image
-                                src={selectedProfile.avatar}
-                                alt={selectedProfile.name}
+                                src={selectedProfile.avatar_url || AVATAR_FALLBACK}
+                                alt={selectedProfile.nome_profilo}
                                 fill
                                 className="object-cover"
                             />
@@ -109,61 +135,72 @@ export default function Navbar() {
                     {showProfileMenu && (
                         <div className="absolute right-0 top-full pt-4 w-56 animate-in fade-in duration-200">
                             {/* Triangolino */}
-                            <div className="absolute top-2 right-4 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-zinc-100/10" />
+                            <div className="absolute top-2 right-4 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-b-8 border-b-zinc-100/10" />
                             
                             <div className="bg-black/95 border border-zinc-800 text-white text-[13px] shadow-xl">
                                 {/* Lista Profili Altri */}
                                 <div className="p-3 space-y-3">
                                     {otherProfiles.map((profile) => (
-                                        <div 
-                                            key={profile.id} 
-                                            onClick={() => selectProfile(profile)}
-                                            className="flex items-center gap-3 group/item cursor-pointer"
+                                        <button
+                                            key={profile.id_profilo}
+                                            type="button"
+                                            onClick={() => void handleProfileSwitch(profile)}
+                                            className="flex w-full items-center gap-3 group/item cursor-pointer text-left"
                                         >
                                             <div className="relative w-8 h-8 rounded-sm overflow-hidden">
-                                                <Image 
-                                                    src={profile.avatar} 
-                                                    alt={profile.name} 
-                                                    fill 
+                                                <Image
+                                                    src={profile.avatar_url || AVATAR_FALLBACK}
+                                                    alt={profile.nome_profilo}
+                                                    fill
                                                     className="object-cover"
                                                 />
                                             </div>
-                                            <span className="group-hover/item:underline">{profile.name}</span>
-                                        </div>
+                                            <span className="group-hover/item:underline">{profile.nome_profilo}</span>
+                                        </button>
                                     ))}
                                 </div>
 
-                                <div className="h-[1px] bg-zinc-800" />
+                                <div className="h-px bg-zinc-800" />
 
                                 {/* Azioni */}
                                 <div className="p-3 space-y-3">
-                                    <div className="flex items-center gap-3 group/item cursor-pointer">
+                                    <button
+                                        type="button"
+                                        onClick={handleManageProfiles}
+                                        className="flex w-full items-center gap-3 group/item cursor-pointer text-left"
+                                    >
                                         <Pencil size={18} className="text-zinc-400" />
                                         <span className="group-hover/item:underline text-zinc-200">Gestisci i profili</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 group/item cursor-pointer">
-                                        <UserRoundPlus size={18} className="text-zinc-400" />
-                                        <span className="group-hover/item:underline text-zinc-200">Trasferisci profilo</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 group/item cursor-pointer">
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push("/account")}
+                                        className="flex w-full items-center gap-3 group/item cursor-pointer text-left"
+                                    >
                                         <User size={18} className="text-zinc-400" />
                                         <span className="group-hover/item:underline text-zinc-200">Account</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 group/item cursor-pointer">
+                                    </button>
+                                    <a
+                                        href="https://help.netflix.com/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex w-full items-center gap-3 group/item cursor-pointer text-left"
+                                    >
                                         <HelpCircle size={18} className="text-zinc-400" />
                                         <span className="group-hover/item:underline text-zinc-200">Centro assistenza</span>
-                                    </div>
+                                    </a>
                                 </div>
 
-                                <div className="h-[1px] bg-zinc-800" />
+                                <div className="h-px bg-zinc-800" />
 
                                 {/* Logout: Resetta il profilo a null */}
-                                <div 
-                                    onClick={() => selectProfile(null)}
-                                    className="p-4 text-center cursor-pointer hover:underline font-medium text-zinc-200"
+                                <button
+                                    type="button"
+                                    onClick={() => void handleLogout()}
+                                    className="w-full p-4 text-center cursor-pointer hover:underline font-medium text-zinc-200"
                                 >
                                     Esci da Netflix
-                                </div>
+                                </button>
                             </div>
                         </div>
                     )}

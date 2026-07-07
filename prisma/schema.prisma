@@ -152,7 +152,9 @@ model profili {
   lingua       String?
   nome_profilo String
   avatar_url   String?
+  is_kids      Boolean  @default(false)
   id_utente    Int
+  createdAt    DateTime @default(now())
   guarda       guarda[]
   liste        liste[]
   utenti       utenti        @relation(fields: [id_utente], references: [id_utente], onDelete: NoAction, onUpdate: NoAction)
@@ -242,8 +244,19 @@ model utenti {
   createdAt      DateTime         @default(now())
   otpCode        Int?
   otpExpiry      DateTime?
+
   profili        profili[]
+  sessioni       sessioni[]
   sottoscrizioni sottoscrizioni[]
+}
+
+model sessioni {
+  id_sessione Int      @id @default(autoincrement())
+  id_utente   Int
+  
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  utenti      utenti  @relation(fields: [id_utente], references: [id_utente], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model valutazioni {

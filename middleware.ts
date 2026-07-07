@@ -1,49 +1,50 @@
 // middleware.ts
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+// Route accessibili senza sessione attiva
+const PUBLIC_PATHS = ["/login"];
 
 export function middleware(request: NextRequest) {
-    // 1. Recupera il cookie 'userToken'
-    const cookie = request.cookies.get('isLoggedIn');
-
-    // 2. Verifica se il valore è 'true' (o semplicemente se il cookie esiste)
-    const isLoggedIn = cookie?.value === 'true';
     const { pathname } = request.nextUrl;
 
-    // LOG DI DEBUG: Appare nel terminale di VS Code ad ogni richiesta
-    console.log(`Middleware - Path: ${pathname} | Auth: ${isLoggedIn}`);
+    const sessionToken = request.cookies.get("session_token")?.value;
+    const activeProfileId = request.cookies.get("active_profile_id")?.value;
 
-    // 3. LOGICA DI PROTEZIONE
+    const isLoggedIn = Boolean(sessionToken);
+    const hasActiveProfile = Boolean(activeProfileId);
 
-    // Se l'utente NON è loggato e tenta di accedere a una pagina protetta
-    /*
-    if (!isLoggedIn && pathname !== '/login') {
-        console.log("Middleware -> Log in ");
-        return NextResponse.redirect(new URL('/login', request.url));
+    console.log(
+        `Middleware - Path: ${pathname} | Auth: ${isLoggedIn} | Profile: ${hasActiveProfile}`
+    );
+
+    // 1. Non loggato e prova ad accedere a una route protetta -> /login
+    if (!isLoggedIn && !PUBLIC_PATHS.includes(pathname)) {
+        return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // Se l'utente è loggato e prova a tornare alla pagina di Login
-    if (isLoggedIn && pathname === '/login') {
-        // Reindirizza alla browse
-        return NextResponse.redirect(new URL('/browse', request.url));
+    // 2. Loggato ma prova a tornare al login -> /browse
+    if (isLoggedIn && pathname === "/login") {
+        return NextResponse.redirect(new URL("/browse", request.url));
     }
 
-    if (isLoggedIn && pathname === '/') {
-        return NextResponse.redirect(new URL('/browse', request.url));
+    // 3. Root -> redirect a seconda dello stato
+    if (pathname === "/") {
+        return NextResponse.redirect(
+            new URL(isLoggedIn ? "/browse" : "/login", request.url)
+        );
     }
-*/
+
+    // 4. Loggato ma senza profilo attivo e prova ad accedere a contenuti
+    //    (tutto ciò che sta sotto /browse tranne la pagina di selezione stessa)
+    const isProfileSelectionPage = pathname === "/browse";
+    if (isLoggedIn && !hasActiveProfile && pathname.startsWith("/browse/") && !isProfileSelectionPage) {
+        return NextResponse.redirect(new URL("/browse", request.url));
+    }
+
     return NextResponse.next();
-
 }
 
-// 4. CONFIGURAZIONE MATCHER
 export const config = {
-    /*
-     * Applica il middleware a tutte le rotte tranne:
-     * - api (rotte API)
-     * - _next/static (file statici come CSS/JS)
-     * - _next/image (ottimizzazione immagini)
-     * - favicon.ico e immagini nelle cartelle public (es. images, assets)
-     */
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|images|assets).*)'],
+    matcher: ["/", "/login", "/browse/:path*"],
 };

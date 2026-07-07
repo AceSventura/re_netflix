@@ -3,22 +3,22 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useProfiles } from "@/context/ProfileContext";
-import type { profili } from "@prisma/client"; // Importazione sicura del tipo Prisma nel client
 
 import Navbar from "@/components/browse/Navbar";
 import Hero from "@/components/browse/Hero";
 import MediaRow from "@/components/browse/MediaRow";
-import Profiles from "@/components/browse/Profiles";
+import Profiles from "@/components/browse/ProfileSelection";
 import MovieDetailModal from "@/components/browse/MovieDetailModal";
 import Footer from "@/components/browse/Footer";
 
-import { getBrowseData } from "@/app/actions/media"; 
+import { getBrowseData } from "@/app/actions/media";
 
 interface MediaItem {
     id: string;
     title: string;
     description?: string;
     poster: string;
+    vposter: string;
     type: string;
 }
 
@@ -28,7 +28,6 @@ interface CarouselRow {
     items: MediaItem[];
 }
 
-// Algoritmo di Fisher-Yates per randomizzare l'ordine dei caroselli
 const shuffleArray = <T,>(array: T[]): T[] => {
     const newArray = [...array];
     for (let i = newArray.length - 1; i > 0; i--) {
@@ -38,7 +37,6 @@ const shuffleArray = <T,>(array: T[]): T[] => {
     return newArray;
 };
 
-// Componente di contenuto che accetta il profilo attivo
 const BrowseContent = ({ profileId }: { profileId: number }) => {
     const searchParams = useSearchParams();
     const selectedMediaId = searchParams.get("id");
@@ -48,8 +46,12 @@ const BrowseContent = ({ profileId }: { profileId: number }) => {
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
+
         const fetchData = async () => {
+            setIsLoadingData(true);
             const data = await getBrowseData(profileId);
+            if (!isMounted) return;
 
             const coinFlip = Math.random() < 0.5;
             const firstTopMovie = data.topMovies?.[0];
@@ -66,46 +68,53 @@ const BrowseContent = ({ profileId }: { profileId: number }) => {
                 { id: "top-10-series", title: "Top 10 delle serie TV in Italia oggi", items: data.topSeries || [] },
             ];
 
-            const validRows = structuredRows.filter(row => row.items.length > 0);
-            const randomizedRows = shuffleArray(validRows);
-
-            setMediaRows(randomizedRows);
+            const validRows = structuredRows.filter((row) => row.items.length > 0);
+            setMediaRows(shuffleArray(validRows));
             setIsLoadingData(false);
         };
-        fetchData(); 
+
+        fetchData();
+        return () => {
+            isMounted = false;
+        };
     }, [profileId]);
 
     return (
-        <div className={`bg-[#141414] min-h-screen relative overflow-x-hidden ${selectedMediaId ? "h-screen overflow-hidden" : ""}`}>
-            <div className={`transition-all duration-500 ${selectedMediaId ? "brightness-[0.2] scale-[0.98] blur-sm" : ""}`}>
+        <div
+            className={`bg-[#141414] min-h-screen relative overflow-x-hidden ${
+                selectedMediaId ? "h-screen overflow-hidden" : ""
+            }`}
+        >
+            <div
+                className={`transition-all duration-500 ${
+                    selectedMediaId ? "brightness-[0.2] scale-[0.98] blur-sm" : ""
+                }`}
+            >
                 <Navbar />
                 {heroItem && <Hero item={heroItem} />}
-                
+
                 <main className="p-6 md:p-12 space-y-12">
                     {isLoadingData ? (
                         <div className="text-white text-center py-20">Caricamento catalogo...</div>
                     ) : (
-                        <>
-                            {mediaRows.map((row) => (
-                                <MediaRow 
-                                    key={row.id} 
-                                    title={row.title} 
-                                    items={row.items} 
-                                    isTop10={row.id.includes("top-10")} 
-                                />
-                            ))}
-                        </>
+                        mediaRows.map((row) => (
+                            <MediaRow
+                                key={row.id}
+                                title={row.title}
+                                items={row.items}
+                                isTop10={row.id.includes("top-10")}
+                            />
+                        ))
                     )}
                 </main>
-                <Footer/>
+                <Footer />
             </div>
-            
+
             {selectedMediaId && <MovieDetailModal />}
         </div>
     );
-}
+};
 
-// Punto di ingresso principale
 export default function Home() {
     const { selectedProfile, isLoading } = useProfiles();
 
@@ -115,12 +124,9 @@ export default function Home() {
         return <Profiles />;
     }
 
-    // Allineamento forzato al tipo generato da Prisma tramite casting
-    const prismaProfile = selectedProfile as unknown as profili;
-
     return (
         <Suspense fallback={<div className="bg-[#141414] h-screen" />}>
-            <BrowseContent profileId={prismaProfile.id_profilo} />
+            <BrowseContent profileId={selectedProfile.id_profilo} />
         </Suspense>
     );
 }
