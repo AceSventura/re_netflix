@@ -122,8 +122,10 @@ model licenze {
 }
 
 model lingue {
-  id_lingua   Int           @id @default(autoincrement())
-  nome        String
+  id_lingua    Int            @id @default(autoincrement())
+  nome         String
+  assets_audio assets_audio[] // Relazione inversa per assets_audio
+  sottotitoli  sottotitoli[]  // Relazione inversa per sottotitoli
 }
 
 model liste {
