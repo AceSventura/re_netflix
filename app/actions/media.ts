@@ -26,7 +26,7 @@ export async function getBrowseData(profileId?: number) {
         });
 
         // 3. Estrazione "La mia lista" per lo specifico profilo
-        let myList: Array<{ id: string; title: string; poster: string; type: string }> = [];
+        let myList: Array<{ id: string; title: string; poster: string; vposter: string; type: string }> = [];
         
         if (profileId) {
             // Recupera i film salvati dal profilo
@@ -46,6 +46,7 @@ export async function getBrowseData(profileId?: number) {
                 id: sm.contenuti.id_contenuto.toString(),
                 title: sm.contenuti.titolo_contenuto,
                 poster: sm.contenuti.copertina_url || "https://picsum.photos/640/360?random=3",
+                vposter: sm.contenuti.vposter_url || "https://picsum.photos/400/600?random=3",
                 type: "film"
             }));
 
@@ -54,6 +55,7 @@ export async function getBrowseData(profileId?: number) {
                 id: ss.serie_tv.id_serie_tv.toString(),
                 title: ss.serie_tv.titolo_serie_tv,
                 poster: ss.serie_tv.img_hero || "https://picsum.photos/640/360?random=4",
+                vposter: ss.serie_tv.vposter_url || "https://picsum.photos/400/600?random=4",
                 type: "serie"
             }));
 
@@ -66,6 +68,7 @@ export async function getBrowseData(profileId?: number) {
             id: s.id_serie_tv.toString(),
             title: s.titolo_serie_tv,
             poster: s.img_hero || "https://picsum.photos/640/360?random=1",
+            vposter: s.vposter_url || "https://picsum.photos/400/600?random=1",
             type: "serie"
         }));
 
@@ -73,6 +76,7 @@ export async function getBrowseData(profileId?: number) {
             id: f.id_contenuto.toString(),
             title: f.titolo_contenuto,
             poster: f.copertina_url || "https://picsum.photos/640/360?random=2",
+            vposter: f.vposter_url || "https://picsum.photos/400/600?random=2",
             type: "film"
         }));
 
@@ -80,6 +84,7 @@ export async function getBrowseData(profileId?: number) {
             id: s.id_serie_tv.toString(),
             title: s.titolo_serie_tv,
             poster: s.img_hero || "https://picsum.photos/640/360?random=5",
+            vposter: s.vposter_url || "https://picsum.photos/400/600?random=5",
             type: "serie"
         }));
 
@@ -87,6 +92,7 @@ export async function getBrowseData(profileId?: number) {
             id: f.id_contenuto.toString(),
             title: f.titolo_contenuto,
             poster: f.copertina_url || "https://picsum.photos/640/360?random=6",
+            vposter: f.vposter_url || "https://picsum.photos/400/600?random=6",
             type: "film"
         }));
 
@@ -132,6 +138,7 @@ export async function getMediaDetails(id: string, type: string) {
                 cast: cast,
                 genres: genres,
                 heroImage: film.copertina_url || "https://picsum.photos/800/450?random=1",
+                vposter: film.vposter_url || "https://picsum.photos/400/600?random=1",
                 episodes: [] 
             };
         } 
@@ -173,7 +180,8 @@ export async function getMediaDetails(id: string, type: string) {
                 duration: "Stagioni multiple",
                 cast: [], 
                 genres: [], 
-                heroImage: serie.img_hero || "https://picsum.photos/800/450?random=2", 
+                heroImage: serie.img_hero || "https://picsum.photos/800/450?random=2",
+                vposter: serie.vposter_url || "https://picsum.photos/400/600?random=2",
                 episodes: episodesList
             };
         }
@@ -194,6 +202,7 @@ export async function getAllMovies() {
                 id_contenuto: true,
                 titolo_contenuto: true,
                 copertina_url: true,
+                vposter_url: true,
             }
         });
 
@@ -201,6 +210,7 @@ export async function getAllMovies() {
             id: m.id_contenuto.toString(),
             title: m.titolo_contenuto,
             thumbnail: m.copertina_url || "https://picsum.photos/300/200?random=1",
+            vposter: m.vposter_url || "https://picsum.photos/400/600?random=1",
             type: "film"
         }));
     } catch (error) {
@@ -216,6 +226,7 @@ export async function getAllSeries() {
                 id_serie_tv: true,
                 titolo_serie_tv: true,
                 img_hero: true, 
+                vposter_url: true,
             }
         });
 
@@ -223,6 +234,7 @@ export async function getAllSeries() {
             id: s.id_serie_tv.toString(),
             title: s.titolo_serie_tv,
             thumbnail: s.img_hero || "https://picsum.photos/300/200?random=2",
+            vposter: s.vposter_url || "https://picsum.photos/400/600?random=2",
             type: "serie_tv"
         }));
     } catch (error) {
@@ -251,14 +263,14 @@ export async function getMyListFromIds(items: { id: string; type: string }[]) {
             filmIds.length > 0 
                 ? prisma.contenuti.findMany({
                     where: { id_contenuto: { in: filmIds } },
-                    select: { id_contenuto: true, titolo_contenuto: true, copertina_url: true }
+                    select: { id_contenuto: true, titolo_contenuto: true, copertina_url: true, vposter_url: true }
                   }) 
                 : Promise.resolve([]),
             
             serieIds.length > 0 
                 ? prisma.serie_tv.findMany({
                     where: { id_serie_tv: { in: serieIds } },
-                    select: { id_serie_tv: true, titolo_serie_tv: true, img_hero: true }
+                    select: { id_serie_tv: true, titolo_serie_tv: true, img_hero: true, vposter_url: true }
                   }) 
                 : Promise.resolve([])
         ]);
@@ -268,6 +280,7 @@ export async function getMyListFromIds(items: { id: string; type: string }[]) {
             id: f.id_contenuto.toString(),
             title: f.titolo_contenuto,
             thumbnail: f.copertina_url || "https://picsum.photos/300/200?random=1",
+            vposter: f.vposter_url || "https://picsum.photos/400/600?random=1",
             type: "film"
         }));
 
@@ -275,6 +288,7 @@ export async function getMyListFromIds(items: { id: string; type: string }[]) {
             id: s.id_serie_tv.toString(),
             title: s.titolo_serie_tv,
             thumbnail: s.img_hero || "https://picsum.photos/300/200?random=2",
+            vposter: s.vposter_url || "https://picsum.photos/400/600?random=2",
             type: "serie_tv"
         }));
 

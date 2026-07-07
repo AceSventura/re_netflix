@@ -90,7 +90,18 @@ export default function Hero({ item }: HeroProps) {
 
         return () => {
             if (hls) {
+                // 1. Ferma immediatamente i download di rete in corso
+                hls.stopLoad();
+                // 2. Scollega l'istanza dal tag video
+                hls.detachMedia();
+                // 3. Distrugge l'istanza in sicurezza
                 hls.destroy();
+            }
+            
+            // 4. Pulizia nativa del DOM per il tag video (Previene ghost-fetching in Safari)
+            if (video) {
+                video.removeAttribute('src');
+                video.load();
             }
         };
     }, [streamUrl]);

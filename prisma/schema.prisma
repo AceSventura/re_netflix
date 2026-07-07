@@ -62,6 +62,7 @@ model contenuti {
   tipo             String
   id_stagione      Int?
   copertina_url    String?       
+  vposter_url       String?
   classificato_in  classificato_in[]
   codificato       codificato[]
   stagioni         stagioni?         @relation(fields: [id_stagione], references: [id_stagione], onDelete: NoAction, onUpdate: NoAction)
@@ -190,8 +191,9 @@ model serie_tv {
   id_serie_tv     Int           @id @default(autoincrement())
   titolo_serie_tv String
   descrizione     String?
-  anno_inizio   Int?
+  anno_inizio     Int?
   img_hero        String?
+  vposter_url      String?
   salva_serie     salva_serie[]
   stagioni        stagioni[]
   valutazioni     valutazioni[]
