@@ -124,8 +124,6 @@ model licenze {
 model lingue {
   id_lingua   Int           @id @default(autoincrement())
   nome        String
-  parlato_in  parlato_in[]
-  tradotto_in tradotto_in[]
 }
 
 model liste {
