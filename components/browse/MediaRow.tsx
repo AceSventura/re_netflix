@@ -9,6 +9,7 @@ interface MediaItem {
     id: string;
     title: string;
     poster: string;
+    vposter: string;
     type: string;
 }
 
@@ -87,19 +88,19 @@ export default function MediaRow({ title, items, isTop10 = false }: MediaRowProp
                                 key={item.id}
                                 className={`relative shrink-0 cursor-pointer transition-transform duration-300 hover:scale-105 hover:z-30 group flex items-end ${
                                     isTop10 
-                                    ? `${top10ContainerClass} h-[180px] md:h-[220px] justify-end` 
-                                    : "w-[160px] md:w-[260px] aspect-video"
+                                    ? `${top10ContainerClass} h-45 md:h-55 justify-end` 
+                                    : "w-40 md:w-65 aspect-video"
                                 }`}
                             >
                                 {isTop10 && (
                                     <>
-                                        <div className="absolute left-[-20px] md:left-[-30px] bottom-[-15px] md:bottom-[-25px] text-[200px] md:text-[260px] font-black text-black [-webkit-text-stroke:4px_#595959] leading-none z-0 tracking-[-0.08em] select-none pointer-events-none">
+                                        <div className="absolute -left-5 md:-left-7.5 -bottom-3.75 md:-bottom-6.25 text-[200px] md:text-[260px] font-black text-black [-webkit-text-stroke:4px_#595959] leading-none z-0 tracking-[-0.08em] select-none pointer-events-none">
                                             {index + 1}
                                         </div>
                                         
-                                        <div className="relative w-[120px] md:w-[140px] h-full z-10 rounded-md overflow-hidden shadow-2xl">
+                                        <div className="relative w-30 md:w-35 h-full z-10 rounded-md overflow-hidden shadow-2xl">
                                             <Image
-                                                src={item.poster}
+                                                src={item.vposter} // <-- MODIFICA QUI: Ora usa il poster verticale
                                                 alt={item.title}
                                                 fill
                                                 className="object-cover"
@@ -112,7 +113,7 @@ export default function MediaRow({ title, items, isTop10 = false }: MediaRowProp
                                 {!isTop10 && (
                                     <div className="relative w-full h-full rounded-md overflow-hidden">
                                         <Image
-                                            src={item.poster}
+                                            src={item.poster} // Le righe normali continuano a usare il poster orizzontale
                                             alt={item.title}
                                             fill
                                             className="object-cover"
