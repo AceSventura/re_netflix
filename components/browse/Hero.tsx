@@ -23,7 +23,7 @@ export default function Hero({ item }: HeroProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [isMuted, setIsMuted] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
     const [streamUrl, setStreamUrl] = useState<string | null>(null);
 
     // 1. Risoluzione asincrona dell'URL
