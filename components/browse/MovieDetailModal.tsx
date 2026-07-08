@@ -3,9 +3,10 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation"; // Aggiunto usePathname
 import Link from "next/link";
 import Image from "next/image";
-import { Play, Plus, X, ThumbsUp, Volume2, ChevronDown } from "lucide-react";
+import { Play, Plus, Check, X, ThumbsUp, Volume2, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getMediaDetails } from "@/app/actions/media";
+import { useProfiles } from "@/context/ProfileContext";
 
 interface MediaDetail {
     title: string;
@@ -35,9 +36,14 @@ export default function MovieDetailModal() {
     const type = searchParams.get("type");
 
     const [isVisible, setIsVisible] = useState(false);
+    const { selectedProfile } = useProfiles();
     const [movie, setMovie] = useState<MediaDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedSeason, setSelectedSeason] = useState<number>(1);
+    const [resumeTime, setResumeTime] = useState<number | null>(null);
+    const [episodeResumeTimes, setEpisodeResumeTimes] = useState<Record<string, number>>({});
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsVisible(true), 10);
@@ -68,6 +74,93 @@ export default function MovieDetailModal() {
         fetchDetails();
     }, [id, type]);
 
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadFavoriteStatus = async () => {
+            if (!id || !selectedProfile?.id_profilo || !type) {
+                if (isMounted) {
+                    setIsFavorite(false);
+                }
+                return;
+            }
+
+            const normalizedType = type === "film" ? "film" : "serie";
+
+            try {
+                const response = await fetch(`/api/favorites?idProfilo=${selectedProfile.id_profilo}&idContenuto=${id}&tipo=${normalizedType}`);
+                if (!response.ok) throw new Error("Errore nel recupero stato preferiti");
+
+                const data = await response.json();
+                if (isMounted) {
+                    setIsFavorite(Boolean(data?.data?.isFavorite));
+                }
+            } catch (error) {
+                console.error("Errore nel recupero dello stato preferiti:", error);
+            }
+        };
+
+        const loadResumeInfo = async () => {
+            if (!id || !selectedProfile?.id_profilo) {
+                if (isMounted) {
+                    setResumeTime(null);
+                    setEpisodeResumeTimes({});
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/watch/${id}/progress?idProfilo=${selectedProfile.id_profilo}`);
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const savedTime = typeof data?.data?.durata_visualizzata === "number" ? data.data.durata_visualizzata : null;
+
+                if (isMounted) {
+                    setResumeTime(savedTime && savedTime > 5 ? savedTime : null);
+                }
+            } catch (error) {
+                console.error("Errore nel recupero del progresso per il dettaglio:", error);
+            }
+        };
+
+        const loadEpisodeResumeInfo = async () => {
+            if (!selectedProfile?.id_profilo || !movie?.episodes?.length) {
+                if (isMounted) {
+                    setEpisodeResumeTimes({});
+                }
+                return;
+            }
+
+            try {
+                const results = await Promise.all(
+                    movie.episodes.map(async (ep) => {
+                        const response = await fetch(`/api/watch/${ep.id}/progress?idProfilo=${selectedProfile.id_profilo}`);
+                        if (!response.ok) return [ep.id, null] as const;
+
+                        const data = await response.json();
+                        const savedTime = typeof data?.data?.durata_visualizzata === "number" ? data.data.durata_visualizzata : null;
+                        return [ep.id, savedTime && savedTime > 5 ? savedTime : null] as const;
+                    })
+                );
+
+                if (isMounted) {
+                    setEpisodeResumeTimes(Object.fromEntries(results.filter(([, value]) => value !== null)) as Record<string, number>);
+                }
+            } catch (error) {
+                console.error("Errore nel recupero dei progressi degli episodi:", error);
+            }
+        };
+
+        void loadFavoriteStatus();
+        void loadResumeInfo();
+        void loadEpisodeResumeInfo();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id, selectedProfile?.id_profilo, movie?.episodes, type]);
+
     const closeModal = () => {
         setIsVisible(false);
         // Sostituito il percorso fisso con 'pathname' per preservare la categoria corrente
@@ -82,16 +175,52 @@ export default function MovieDetailModal() {
         ? movie.episodes.filter(ep => (ep.season || 1) === selectedSeason)
         : [];
 
+    const formatResumeTime = (seconds: number) => {
+        const minutes = Math.floor(seconds / 60);
+        return `${minutes} min`;
+    };
+
+    const handleToggleFavorite = async () => {
+        if (!id || !selectedProfile?.id_profilo || !type || isFavoriteLoading) return;
+
+        const normalizedType = type === "film" ? "film" : "serie";
+        const nextAction = isFavorite ? "rimuovi" : "aggiungi";
+
+        setIsFavoriteLoading(true);
+
+        try {
+            const response = await fetch("/api/favorites", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    idProfilo: selectedProfile.id_profilo,
+                    idContenuto: Number(id),
+                    tipo: normalizedType,
+                    azione: nextAction,
+                }),
+            });
+
+            if (!response.ok) throw new Error("Errore nel salvataggio dei preferiti");
+            setIsFavorite(!isFavorite);
+        } catch (error) {
+            console.error("Errore nel toggle preferiti:", error);
+        } finally {
+            setIsFavoriteLoading(false);
+        }
+    };
+
+    const watchTargetId = Object.keys(episodeResumeTimes)[0] || (movie?.episodes?.length ? movie.episodes[0].id : id);
+
     return (
         <div className={`fixed inset-0 z-500 flex justify-center bg-black/70 overflow-y-auto transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`}>
             <div className="absolute inset-0" onClick={closeModal} />
 
-            <div className={`relative bg-[#181818] w-[95%] max-w-[850px] h-fit min-h-[500px] my-8 rounded-xl overflow-hidden shadow-2xl transition-transform duration-300 ${isVisible ? "scale-100" : "scale-90"}`}>
+            <div className={`relative bg-[#181818] w-[95%] max-w-212.5 h-fit min-h-125 my-8 rounded-xl overflow-hidden shadow-2xl transition-transform duration-300 ${isVisible ? "scale-100" : "scale-90"}`}>
                 
                 {isLoading ? (
-                    <div className="flex h-[500px] items-center justify-center text-white">Caricamento in corso...</div>
+                    <div className="flex h-125 items-center justify-center text-white">Caricamento in corso...</div>
                 ) : !movie ? (
-                    <div className="flex h-[500px] flex-col items-center justify-center text-white space-y-4">
+                    <div className="flex h-125 flex-col items-center justify-center text-white space-y-4">
                         <p>Contenuto non trovato.</p>
                         <button onClick={closeModal} className="px-4 py-2 bg-white text-black rounded font-bold">Chiudi</button>
                     </div>
@@ -105,7 +234,7 @@ export default function MovieDetailModal() {
                                 fill
                                 unoptimized
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-transparent to-transparent" />
+                            <div className="absolute inset-0 bg-linear-to-t from-[#181818] via-transparent to-transparent" />
 
                             <button onClick={closeModal} className="absolute top-4 right-4 p-2 bg-[#181818] rounded-full text-white hover:bg-white/20 transition z-10">
                                 <X size={24} />
@@ -116,12 +245,19 @@ export default function MovieDetailModal() {
                                     {movie.title}
                                 </h2>
                                 <div className="flex items-center gap-3">
-                                    <Link href={`/watch/${movie.episodes?.length > 0 ? movie.episodes[0].id : id}`}>
+                                    <Link href={`/watch/${watchTargetId ?? id}`}>
                                         <button className="flex items-center gap-2 bg-white text-black px-8 py-2.5 rounded shadow hover:bg-white/80 transition font-bold">
-                                            <Play fill="black" size={20}/> Riproduci
+                                            <Play fill="black" size={20}/>
+                                            {resumeTime || Object.keys(episodeResumeTimes).length > 0 ? `Riprendi · ${formatResumeTime(resumeTime ?? Object.values(episodeResumeTimes)[0] ?? 0)}` : "Riproduci"}
                                         </button>
                                     </Link>
-                                    <button className="p-2 border-2 border-zinc-500 rounded-full text-white hover:border-white transition"><Plus size={22} /></button>
+                                    <button
+                                        onClick={handleToggleFavorite}
+                                        disabled={isFavoriteLoading || !selectedProfile?.id_profilo}
+                                        className={`p-2 border-2 rounded-full transition ${isFavorite ? "border-emerald-500 bg-emerald-500/20 text-emerald-400" : "border-zinc-500 text-white hover:border-white"} ${isFavoriteLoading ? "opacity-70" : ""}`}
+                                    >
+                                        {isFavorite ? <Check size={22} /> : <Plus size={22} />}
+                                    </button>
                                     <button className="p-2 border-2 border-zinc-500 rounded-full text-white hover:border-white transition"><ThumbsUp size={20} /></button>
                                     <div className="ml-auto"><Volume2 className="text-zinc-500 hover:text-white cursor-pointer" /></div>
                                 </div>
@@ -211,7 +347,9 @@ export default function MovieDetailModal() {
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <h4 className="font-bold text-lg leading-tight">{ep.title}</h4>
-                                                    <span className="text-zinc-400 font-semibold">{ep.time}</span>
+                                                    <span className={`font-semibold ${episodeResumeTimes[ep.id] ? "text-emerald-400" : "text-zinc-400"}`}>
+                                                        {episodeResumeTimes[ep.id] ? `Riprendi · ${formatResumeTime(episodeResumeTimes[ep.id])}` : ep.time}
+                                                    </span>
                                                 </div>
                                                 <p className="text-sm text-zinc-400 line-clamp-2">
                                                     {ep.desc}

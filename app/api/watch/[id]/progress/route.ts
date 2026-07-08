@@ -20,6 +20,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body: ProgressUpdateRequest = await request.json();
 
     const { idProfilo, durataVisualizzata, statoCompletamento } = body;
+    // Normalizziamo il valore di completamento in modo compatibile con il tipo numerico del modello Prisma.
+    const normalizedCompletion = typeof statoCompletamento === 'boolean'
+      ? (statoCompletamento ? 1 : 0)
+      : 0;
 
     if (!idProfilo || durataVisualizzata === undefined) {
       return NextResponse.json(
@@ -38,13 +42,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
       update: {
         durata_visualizzata: durataVisualizzata,
-        stato_completamento: statoCompletamento ?? undefined,
+        stato_completamento: normalizedCompletion,
       },
       create: {
         id_contenuto: contentId,
         id_profilo: idProfilo,
         durata_visualizzata: durataVisualizzata,
-        stato_completamento: statoCompletamento ?? false,
+        stato_completamento: normalizedCompletion,
       },
     });
 

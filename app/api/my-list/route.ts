@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     // Prisma sa già il tipo
     const filmSalvati = await prisma.salva_film.findMany({
       where: { id_profilo: parseInt(idProfilo) },
-      include: { film: true }, // type-safe
+      include: { contenuti: true },
     });
 
     const serieSalvate = await prisma.salva_serie.findMany({
@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({
-      film: filmSalvati.map(f => f.film),       
-      serie: serieSalvate.map(s => s.serie_tv) 
+      film: filmSalvati.map((f) => f.contenuti),
+      serie: serieSalvate.map((s) => s.serie_tv),
     });
   } catch (error) {
     console.error(error);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, use } from 'react';
+import { useState, useEffect, useRef, use, useCallback } from 'react';
 import Image from 'next/image';
 import {
   ArrowLeft, RotateCcw, RotateCw, Play, Pause, SkipForward, Volume2, VolumeX, Maximize, MessageSquare, Copy
@@ -8,6 +8,7 @@ import {
 import { useRouter } from 'next/navigation'; 
 import Hls from 'hls.js';
 import { getMediaDetails } from "@/app/actions/media";
+import { useProfiles } from '@/context/ProfileContext';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -41,9 +42,14 @@ export default function WatchPage({ params }: PageProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const { selectedProfile } = useProfiles();
+  const progressLastSavedRef = useRef<number | null>(null);
   
+  // Il route param contiene l'id del contenuto da riprodurre.
   const resolvedParams = use(params);
   const targetId = resolvedParams.id;
+  // Manteniamo il profilo attivo in una variabile stabile per evitare dipendenze fragili nei callback ed effetti.
+  const profileId = selectedProfile?.id_profilo;
 
   const [metadata, setMetadata] = useState<ContentMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,11 +68,13 @@ export default function WatchPage({ params }: PageProps) {
   const [subtitleTracks, setSubtitleTracks] = useState<MediaTrack[]>([]);
   const [currentAudio, setCurrentAudio] = useState<number>(0);
   const [currentSubtitle, setCurrentSubtitle] = useState<number>(-1);
+  const [resumeTime, setResumeTime] = useState<number | null>(null);
 
   const currentEp = metadata?.tipo === 'serie_tv' ? metadata.episodi?.find(ep => ep.isCurrent) : null;
   const currentEpIndex = metadata?.episodi?.findIndex(ep => ep.isCurrent) ?? -1;
   const nextEpisode = (currentEpIndex !== -1 && metadata?.episodi) ? metadata.episodi[currentEpIndex + 1] : null;
 
+  // Carichiamo i metadati di interfaccia del contenuto una volta che l'id è disponibile.
   useEffect(() => {
     const fetchUIContent = async () => {
       try {
@@ -81,6 +89,96 @@ export default function WatchPage({ params }: PageProps) {
     fetchUIContent();
   }, [targetId]);
 
+  // Se esiste già un progresso salvato per questo profilo e contenuto, lo ripristiniamo dal database.
+  useEffect(() => {
+    const loadProgress = async () => {
+      if (!profileId || !targetId) {
+        setResumeTime(null);
+        progressLastSavedRef.current = null;
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/watch/${targetId}/progress?idProfilo=${profileId}`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const savedTime = data?.data?.durata_visualizzata;
+
+        if (typeof savedTime === 'number' && savedTime > 5) {
+          setResumeTime(savedTime);
+          setCurrentTime(savedTime);
+        } else {
+          setResumeTime(null);
+        }
+      } catch (error) {
+        console.error('Errore nel recupero del progresso:', error);
+      }
+    };
+
+    loadProgress();
+  }, [profileId, targetId]);
+
+  // Persistiamo il punto di riproduzione in modo incrementale, così il watch experience è resilient anche a refresh o chiusura della pagina.
+  const saveProgress = useCallback(async (seconds: number, completed = false) => {
+    if (!profileId || !targetId || !Number.isFinite(seconds) || seconds < 5) return;
+
+    try {
+      await fetch(`/api/watch/${targetId}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idProfilo: profileId,
+          durataVisualizzata: Math.floor(seconds),
+          statoCompletamento: completed,
+        }),
+      });
+    } catch (error) {
+      console.error('Errore nel salvataggio del progresso:', error);
+    }
+  }, [profileId, targetId]);
+
+  // Quando il progresso recuperato è pronto e la durata del video è nota, impostiamo il timestamp di ripresa.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || resumeTime === null || duration <= 0) return;
+
+    const safeResumeTime = Math.min(Math.max(0, resumeTime), Math.max(0, duration - 1));
+    video.currentTime = safeResumeTime;
+  }, [resumeTime, duration]);
+
+  // Salviamo il progresso periodicamente mentre il video viene visto, evitando spam inutili sul database.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !profileId || !targetId) return;
+
+    const interval = window.setInterval(() => {
+      const current = Math.floor(video.currentTime);
+      if (!Number.isFinite(current) || current < 5 || current === progressLastSavedRef.current) return;
+
+      progressLastSavedRef.current = current;
+      void saveProgress(current, duration > 0 && current >= duration - 2);
+    }, 10000);
+
+    return () => window.clearInterval(interval);
+  }, [profileId, targetId, duration, saveProgress]);
+
+  // Prima di lasciare la pagina, salviamo l'ultima posizione nota per non perdere il punto di ripresa.
+  useEffect(() => {
+    const video = videoRef.current;
+
+    return () => {
+      if (!video || !profileId || !targetId) return;
+
+      const current = Math.floor(video.currentTime);
+      if (!Number.isFinite(current) || current < 5 || current === progressLastSavedRef.current) return;
+
+      progressLastSavedRef.current = current;
+      void saveProgress(current, duration > 0 && current >= duration - 2);
+    };
+  }, [profileId, targetId, duration, saveProgress]);
+
+  // Inizializziamo lo stream HLS e il player video una volta che il contenuto è pronto.
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !targetId) return;
@@ -134,6 +232,7 @@ export default function WatchPage({ params }: PageProps) {
     };
   }, [targetId]);
 
+  // Manteniamo il player sincronizzato con lo stato di riproduzione.
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -144,10 +243,12 @@ export default function WatchPage({ params }: PageProps) {
     }
   }, [isPlaying]);
 
+  // Aggiorniamo il volume del video ogni volta che cambia lo stato locale.
   useEffect(() => {
     if (videoRef.current) videoRef.current.volume = isMuted ? 0 : volume / 100;
   }, [volume, isMuted]);
 
+  // Nascondiamo i controlli dopo un breve timeout per ottenere un'esperienza più pulita.
   useEffect(() => {
     if (!showControls) return;
     const timer = setTimeout(() => setShowControls(false), 4000);
@@ -315,7 +416,7 @@ export default function WatchPage({ params }: PageProps) {
         )}
 
         {showEpisodes && metadata?.tipo === 'serie_tv' && (
-          <div className="absolute right-0 top-0 bottom-24 w-[450px] bg-[#181818] z-20 overflow-y-auto shadow-2xl flex flex-col">
+          <div className="absolute right-0 top-0 bottom-24 w-md bg-[#181818] z-20 overflow-y-auto shadow-2xl flex flex-col">
             <div className="flex flex-col py-4">
               {metadata.episodi?.map((ep) => {
                 if (ep.isCurrent) {
@@ -326,7 +427,7 @@ export default function WatchPage({ params }: PageProps) {
                           <span className="text-xl font-bold">{ep.episodeNumber}</span>
                           <span className="text-lg font-bold">{ep.title}</span>
                         </div>
-                        <div className="w-24 h-[2px] bg-zinc-700 relative">
+                        <div className="w-24 h-0.5 bg-zinc-700 relative">
                           <div className="absolute top-0 left-0 h-full bg-red-600 w-1/3"></div>
                         </div>
                       </div>
@@ -364,7 +465,7 @@ export default function WatchPage({ params }: PageProps) {
                       <span className="text-xl font-bold text-zinc-300">{ep.episodeNumber}</span>
                       <span className="text-lg font-medium text-zinc-300">{ep.title}</span>
                     </div>
-                    <div className="w-20 h-[2px] bg-zinc-700"></div>
+                    <div className="w-20 h-0.5 bg-zinc-700"></div>
                   </div>
                 );
               })}

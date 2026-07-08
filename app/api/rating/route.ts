@@ -36,23 +36,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upsert: se esiste una valutazione, la aggiorna; altrimenti la crea
-    const valutazione = await prisma.valutazioni.upsert({
+    // Se esiste già una valutazione per il profilo e il film, la aggiorniamo; altrimenti la creiamo.
+    const existingRating = await prisma.valutazioni.findFirst({
       where: {
-        id_profilo_id_film: {
-          id_profilo: idProfilo,
-          id_film: idFilm,
-        },
-      },
-      update: {
-        punteggio: punteggio as any, // Cast necessario per enum
-      },
-      create: {
         id_profilo: idProfilo,
         id_film: idFilm,
-        punteggio: punteggio as any,
       },
     });
+
+    const valutazione = existingRating
+      ? await prisma.valutazioni.update({
+          where: { id_valutazione: existingRating.id_valutazione },
+          data: { punteggio },
+        })
+      : await prisma.valutazioni.create({
+          data: {
+            id_profilo: idProfilo,
+            id_film: idFilm,
+            punteggio,
+          },
+        });
 
     return NextResponse.json(
       {

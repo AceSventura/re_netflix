@@ -10,7 +10,7 @@ import ReasonsToJoin from '@/components/hero/ReasonsToJoin';
 import NetflixAdsBanner from '@/components/hero/NetflixAdBanner';
 
 
-const SectionLayout = ({ children, className = "" }) => {
+const SectionLayout = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
   return (
     <section className={`py-5 px-[3rem] sm:px-[4rem] md:px-[10rem] lg:px-[22rem] ${className}`}>
       <div className="mx-auto max-w-[120rem]">

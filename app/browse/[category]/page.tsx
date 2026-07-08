@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation"; // Aggiunto useSearchParams
 import { useEffect, useState } from "react";
 import Navbar from "@/components/browse/Navbar"; 
-import { getAllMovies, getAllSeries, getMyListFromIds } from "@/app/actions/media";
+import { getAllMovies, getAllSeries, getMyListFromId } from "@/app/actions/media";
 import MovieDetailModal from "@/components/browse/MovieDetailModal"; 
 
 type ContentItem = {
@@ -45,7 +45,7 @@ export default function CategoryPage() {
                 setContent(data);
             } else if (category === "my-list") {
                 // Estrazione dello stato locale (es. [{ id: "1", type: "film" }])
-                const savedItems = JSON.parse(localStorage.getItem("my_netflix_list") || "[]");
+                const data = await getMyListFromId(profileId);
                 
                 if (savedItems.length > 0) {
                     // Chiamata backend per ottenere i metadati aggiornati
