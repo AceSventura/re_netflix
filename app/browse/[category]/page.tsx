@@ -5,16 +5,20 @@ import { useParams, useRouter, useSearchParams } from "next/navigation"; // Aggi
 import { useEffect, useState } from "react";
 import Navbar from "@/components/browse/Navbar"; 
 import { getAllMovies, getAllSeries, getMyListFromId } from "@/app/actions/media";
-import MovieDetailModal from "@/components/browse/MovieDetailModal"; 
+import MovieDetailModal from "@/components/browse/MovieDetailModal";
+import { useProfiles } from "@/context/ProfileContext";
 
 type ContentItem = {
     id: string;
     title: string;
-    thumbnail: string;
+    poster: string;
+    vposter: string;
     type: string;
 };
 
 export default function CategoryPage() {
+    const { selectedProfile, isLoading } = useProfiles();
+    
     const params = useParams();
     const router = useRouter();
     const searchParams = useSearchParams(); // Estrazione parametri
@@ -22,7 +26,7 @@ export default function CategoryPage() {
     const category = params.category as string;
     const selectedId = searchParams.get("id");
     const selectedType = searchParams.get("type");
-
+    
     const [content, setContent] = useState<ContentItem[]>([]);
 
     const getPageTitle = () => {
@@ -44,21 +48,13 @@ export default function CategoryPage() {
                 const data = await getAllMovies();
                 setContent(data);
             } else if (category === "my-list") {
-                // Estrazione dello stato locale (es. [{ id: "1", type: "film" }])
-                const data = await getMyListFromId(profileId);
-                
-                if (savedItems.length > 0) {
-                    // Chiamata backend per ottenere i metadati aggiornati
-                    const data = await getMyListFromIds(savedItems);
-                    setContent(data);
-                } else {
-                    setContent([]);
-                }
+                const data = await getMyListFromId(selectedProfile?.id_profilo);
+                setContent(data);
             }
         };
 
         fetchData();
-    }, [category]);
+    }, [category, selectedProfile?.id_profilo]);
 
     return (
         <div className="min-h-screen bg-[#141414]">
@@ -80,7 +76,7 @@ export default function CategoryPage() {
                                 className="relative aspect-video bg-zinc-800 rounded-md overflow-hidden hover:scale-105 transition duration-300 cursor-pointer"
                             >
                                <Image 
-                                src={item.thumbnail} 
+                                src={item.poster} 
                                 alt={item.title} 
                                 fill
                                 className="object-cover"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter }from 'next/navigation';
 import { ChevronRight, Factory, Plus, Section, X } from 'lucide-react';
 import FaqSection from '@/components/hero/FAQSection';
@@ -48,7 +48,7 @@ export default function NetflixLanding() {
                     <option>Italiano</option>
                     <option>English</option>
                     </select>
-                    <button className="bg-red-600 hover:bg-red-700 px-4 py-1 rounded font-medium text-sm transition" onClick={() => router.push('/signup')}>
+                    <button className="bg-red-600 hover:bg-red-700 px-4 py-1 rounded font-medium text-sm transition" onClick={() => router.push('/login')}>
                     Accedi
                     </button>
                 </div>
@@ -73,7 +73,7 @@ export default function NetflixLanding() {
                     </button>
                 </form>
                 <p className="mt-4 text-sm text-gray-300">
-                    Vuoi guardare Netflix? Inserisci l'indirizzo email per abbonarti o riattivare il tuo abbonamento.
+                    Vuoi guardare Netflix? Inserisci l&apos;indirizzo email per abbonarti o riattivare il tuo abbonamento.
                 </p>
                 </div>
             </section>  

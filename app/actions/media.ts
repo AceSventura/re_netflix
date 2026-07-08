@@ -26,7 +26,6 @@ export async function getBrowseData(profileId?: number) {
         let continueWatching: Array<{ id: string; title: string; poster: string; vposter: string; type: string; resumeTime: number }> = [];
         
         if (profileId) {
-            console.log("Profile: ", profileId);
             // Recupera i film salvati dal profilo
             const savedMovies = await prisma.salva_film.findMany({
                 where: { id_profilo: profileId },
@@ -265,7 +264,7 @@ export async function getAllMovies() {
         return movies.map(m => ({
             id: m.id_contenuto.toString(),
             title: m.titolo_contenuto,
-            thumbnail: m.copertina_url || "https://picsum.photos/300/200?random=1",
+            poster: m.copertina_url || "https://picsum.photos/300/200?random=1",
             vposter: m.vposter_url || "https://picsum.photos/400/600?random=1",
             type: "film"
         }));
@@ -289,7 +288,7 @@ export async function getAllSeries() {
         return series.map(s => ({
             id: s.id_serie_tv.toString(),
             title: s.titolo_serie_tv,
-            thumbnail: s.img_hero || "https://picsum.photos/300/200?random=2",
+            poster: s.img_hero || "https://picsum.photos/300/200?random=2",
             vposter: s.vposter_url || "https://picsum.photos/400/600?random=2",
             type: "serie_tv"
         }));
@@ -299,7 +298,7 @@ export async function getAllSeries() {
     }
 }
 
-export async function getMyListFromId(profileId: number) {
+export async function getMyListFromId(profileId?: number | null) {
 
     // Estrazione "La mia lista" per lo specifico profilo
     let myList: Array<{ id: string; title: string; poster: string; vposter: string; type: string }> = [];
@@ -343,4 +342,5 @@ export async function getMyListFromId(profileId: number) {
         // Restituisco errore
         throw new Error("Profile ID is required to fetch 'My List'.");
     }
+    return [];
 }

@@ -23,7 +23,7 @@ export default function Hero({ item }: HeroProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [isMuted, setIsMuted] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
     const [streamUrl, setStreamUrl] = useState<string | null>(null);
 
     // 1. Risoluzione asincrona dell'URL
@@ -60,6 +60,18 @@ export default function Hero({ item }: HeroProps) {
         const video = videoRef.current;
         if (!video || !streamUrl) return;
 
+        const tryPlay = () => {
+            if (!video) return;
+
+            video.muted = true;
+            void video.play().catch(() => {
+                if (!video.muted) {
+                    video.muted = true;
+                    void video.play().catch(() => undefined);
+                }
+            });
+        };
+
         let hls: Hls;
 
         if (Hls.isSupported()) {
@@ -71,9 +83,7 @@ export default function Hero({ item }: HeroProps) {
             hls.loadSource(streamUrl);
             hls.attachMedia(video);
             
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                video.play().catch((e) => console.error("Autoplay bloccato:", e));
-            });
+            hls.on(Hls.Events.MANIFEST_PARSED, tryPlay);
 
             hls.on(Hls.Events.ERROR, (event, data) => {
                 if (data.fatal) {
@@ -83,9 +93,7 @@ export default function Hero({ item }: HeroProps) {
             });
         } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
             video.src = streamUrl;
-            video.addEventListener("loadedmetadata", () => {
-                video.play().catch((e) => console.error("Autoplay bloccato (Nativo):", e));
-            });
+            video.addEventListener("loadedmetadata", tryPlay);
         }
 
         return () => {
@@ -126,7 +134,13 @@ export default function Hero({ item }: HeroProps) {
     };
 
     const toggleMute = () => {
-        setIsMuted((prev) => !prev);
+        setIsMuted((prev) => {
+            const nextValue = !prev;
+            if (videoRef.current) {
+                videoRef.current.muted = nextValue;
+            }
+            return nextValue;
+        });
     };
 
     return (

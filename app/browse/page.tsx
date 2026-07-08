@@ -61,7 +61,6 @@ const BrowseContent = ({ profileId }: { profileId: number }) => {
             setHeroItem(selectedHero || null);
 
             const structuredRows: CarouselRow[] = [
-                ...(data.continueWatching?.length ? [{ id: "continue-watching", title: "Continua a guardare", items: data.continueWatching || [] }] : []),
                 { id: "my-list", title: "La mia lista", items: data.myList || [] },
                 { id: "series", title: "Serie TV", items: data.series || [] },
                 { id: "movies", title: "Film", items: data.movies || [] },
