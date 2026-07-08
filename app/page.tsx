@@ -1,14 +1,15 @@
 "use client";
 
-import React from 'react';
-import { useRouter }from 'next/navigation';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ChevronRight, Factory, Plus, Section, X } from 'lucide-react';
+import Image from 'next/image';
 import FaqSection from '@/components/hero/FAQSection';
 import Footer from '@/components/hero/Footer';
 import TrendingRow from '@/components/hero/TrendingRow';
 import ReasonsToJoin from '@/components/hero/ReasonsToJoin';
 import NetflixAdsBanner from '@/components/hero/NetflixAdBanner';
-
+import { checkEmailExists } from '@/app/actions/auth';
 
 const SectionLayout = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
   return (
@@ -22,6 +23,31 @@ const SectionLayout = ({ children, className = "" }: { children: React.ReactNode
 
 export default function NetflixLanding() {
     const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleStart = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email) return;
+
+        setIsLoading(true);
+
+        try {
+            // Controlla se l'email esiste nel database
+            const exists = await checkEmailExists(email);
+
+            // Reindirizza alla pagina corretta passando l'email nell'URL
+            if (exists) {
+                router.push(`/login?email=${encodeURIComponent(email)}`);
+            } else {
+                router.push(`/signup?email=${encodeURIComponent(email)}`);
+            }
+        } catch (error) {
+            console.error("Errore durante la verifica", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="bg-black text-white font-sans selection:bg-red-600">
@@ -30,10 +56,12 @@ export default function NetflixLanding() {
             <section className="relative h-[700px] lg:h-[800px] w-full border-b-8 border-[#232323]">
                 {/* Background Image Overlay */}
                 <div className="absolute inset-0 z-0">
-                <img 
+                <Image 
                     src="https://assets.nflxext.com/ffe/siteui/vlv3/3d31dac6-aaf0-4e6e-8bd7-e16c5d9cd9a3/web/IT-it-20260119-TRIFECTA-perspective_4640c9a6-3de0-4277-97b5-1f61e77ed18e_large.jpg" 
-                    className="w-full h-full object-cover opacity-50"
+                    className="object-cover opacity-50"
                     alt="Netflix Background"
+                    fill
+                    priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-80" />
                 </div>
@@ -62,14 +90,21 @@ export default function NetflixLanding() {
                 <p className="text-lg lg:text-2xl mb-8">
                     A partire da 6,99 €. Disdici quando vuoi.
                 </p>
-                <form className="flex flex-col lg:flex-row gap-2 w-full max-w-2xl">
+                <form onSubmit={handleStart} className="flex flex-col lg:flex-row gap-2 w-full max-w-2xl">
                     <input 
                     type="email" 
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="Indirizzo email"
                     className="flex-grow p-4 bg-black/40 border border-gray-500 rounded text-white outline-none"
                     />
-                    <button className="bg-red-600 hover:bg-red-700 px-8 py-4 rounded text-xl font-bold flex items-center justify-center transition">
-                    Inizia <ChevronRight className="ml-2" />
+                    <button 
+                      type="submit" 
+                      disabled={isLoading}
+                      className="bg-red-600 hover:bg-red-700 px-8 py-4 rounded text-xl font-bold flex items-center justify-center transition disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                    {isLoading ? 'Attendi...' : <>Inizia <ChevronRight className="ml-2" /></>}
                     </button>
                 </form>
                 <p className="mt-4 text-sm text-gray-300">
