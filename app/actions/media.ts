@@ -23,22 +23,19 @@ export async function getBrowseData(profileId?: number) {
 
         // 3. Estrazione "La mia lista" e "Continua a guardare" per lo specifico profilo
         let myList: Array<{ id: string; title: string; poster: string; vposter: string; type: string }> = [];
-        let continueWatching: Array<{ id: string; title: string; poster: string; vposter: string; type: string; resumeTime: number }> = [];
+        let continueWatching: Array<{ id: string; title: string; poster: string; vposter: string; type: string; resumeTime: number; progress: number }> = [];
         
         if (profileId) {
-            // Recupera i film salvati dal profilo
             const savedMovies = await prisma.salva_film.findMany({
                 where: { id_profilo: profileId },
                 include: { contenuti: true }
             });
             
-            // Recupera le serie salvate dal profilo
             const savedSeries = await prisma.salva_serie.findMany({
                 where: { id_profilo: profileId },
                 include: { serie_tv: true }
             });
 
-            // Normalizza i film salvati
             const formattedSavedMovies = savedMovies.map(sm => ({
                 id: sm.contenuti.id_contenuto.toString(),
                 title: sm.contenuti.titolo_contenuto,
@@ -47,7 +44,6 @@ export async function getBrowseData(profileId?: number) {
                 type: "film"
             }));
 
-            // Normalizza le serie salvate
             const formattedSavedSeries = savedSeries.map(ss => ({
                 id: ss.serie_tv.id_serie_tv.toString(),
                 title: ss.serie_tv.titolo_serie_tv,
@@ -56,10 +52,9 @@ export async function getBrowseData(profileId?: number) {
                 type: "serie"
             }));
 
-            // Unifica i contenuti salvati in un unico carosello
             myList = [...formattedSavedMovies, ...formattedSavedSeries];
 
-            // Recuperiamo i contenuti con un progresso già salvato per il profilo attivo.
+            // Recuperiamo i contenuti con un progresso salvato
             const progressEntries = await prisma.guarda.findMany({
                 where: {
                     id_profilo: profileId,
@@ -100,13 +95,13 @@ export async function getBrowseData(profileId?: number) {
                         vposter: resolvedVPoster,
                         type: resolvedType,
                         resumeTime: entry.durata_visualizzata ?? 0,
+                        progress: entry.stato_completamento ?? 0, // <-- Aggiunto il mapping dello stato di completamento
                     };
                 })
                 .sort((a, b) => (b.resumeTime ?? 0) - (a.resumeTime ?? 0))
                 .slice(0, 10);
         }
 
-        // 4. Normalizzazione del resto del catalogo
         const formattedSeries = serie.map(s => ({
             id: s.id_serie_tv.toString(),
             title: s.titolo_serie_tv,

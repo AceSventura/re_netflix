@@ -69,7 +69,6 @@ model contenuti {
   stagioni         stagioni?         @relation(fields: [id_stagione], references: [id_stagione], onDelete: NoAction, onUpdate: NoAction)
   guarda           guarda[]
   include          include[]
-  liste            liste[]
   partecipa        partecipa[]
   salva_film       salva_film[]
   soggetto_a       soggetto_a[]
@@ -128,15 +127,6 @@ model lingue {
   sottotitoli  sottotitoli[]  
 }
 
-model liste {
-  id_profilo   Int
-  id_contenuto Int
-  contenuti    contenuti @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction)
-  profili      profili   @relation(fields: [id_profilo], references: [id_profilo], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([id_profilo, id_contenuto])
-}
-
 model partecipa {
   id_artista   Int
   id_contenuto Int
@@ -156,7 +146,6 @@ model profili {
   id_utente    Int
   createdAt    DateTime @default(now())
   guarda       guarda[]
-  liste        liste[]
   utenti       utenti        @relation(fields: [id_utente], references: [id_utente], onDelete: NoAction, onUpdate: NoAction)
   salva_film   salva_film[]
   salva_serie  salva_serie[]

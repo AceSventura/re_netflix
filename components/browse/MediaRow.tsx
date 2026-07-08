@@ -11,30 +11,30 @@ interface MediaItem {
     poster: string;
     vposter: string;
     type: string;
+    progress?: number; // <-- Aggiunto
+    resumeTime?: number; // <-- Aggiunto
 }
 
 interface MediaRowProps {
     title: string;
     items: MediaItem[];
     isTop10?: boolean;
+    isContinueWatching?: boolean; // <-- Aggiunto
 }
 
-export default function MediaRow({ title, items, isTop10 = false }: MediaRowProps) {
+export default function MediaRow({ title, items, isTop10 = false, isContinueWatching = false }: MediaRowProps) {
     const rowRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
 
-    // Valuta la posizione di scorrimento corrente per mostrare/nascondere le frecce
     const checkScrollPosition = () => {
         if (rowRef.current) {
             const { scrollLeft, scrollWidth, clientWidth } = rowRef.current;
             setCanScrollLeft(scrollLeft > 0);
-            // Tolleranza di 1px per arrotondamenti dei calcoli del browser
             setCanScrollRight(Math.ceil(scrollLeft) < scrollWidth - clientWidth - 1);
         }
     };
 
-    // Controllo iniziale e aggancio al resize della finestra
     useEffect(() => {
         checkScrollPosition();
         window.addEventListener("resize", checkScrollPosition);
@@ -49,6 +49,8 @@ export default function MediaRow({ title, items, isTop10 = false }: MediaRowProp
         }
     };
 
+    if (items.length === 0) return null; // Evita di renderizzare righe vuote
+
     return (
         <div className="space-y-4 group/row">
             <h2 className="text-xl md:text-2xl font-bold text-white pl-4 md:pl-12">
@@ -56,7 +58,6 @@ export default function MediaRow({ title, items, isTop10 = false }: MediaRowProp
             </h2>
 
             <div className="relative">
-                {/* Freccia Sinistra (Trasparente, visibile solo se non si è all'inizio) */}
                 {canScrollLeft && (
                     <button 
                         onClick={() => scroll("left")}
@@ -69,7 +70,6 @@ export default function MediaRow({ title, items, isTop10 = false }: MediaRowProp
                 <div 
                     ref={rowRef}
                     onScroll={checkScrollPosition}
-                    // Aggiunto overflow-y-hidden per inibire lo scorrimento verticale
                     className={`flex gap-2 md:gap-4 overflow-x-auto overflow-y-hidden scroll-smooth px-4 md:px-12 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
                         isTop10 ? "py-10 md:py-16 items-center" : "py-4"
                     }`}
@@ -100,7 +100,7 @@ export default function MediaRow({ title, items, isTop10 = false }: MediaRowProp
                                         
                                         <div className="relative w-30 md:w-35 h-full z-10 rounded-md overflow-hidden shadow-2xl">
                                             <Image
-                                                src={item.vposter} // <-- MODIFICA QUI: Ora usa il poster verticale
+                                                src={item.vposter}
                                                 alt={item.title}
                                                 fill
                                                 className="object-cover"
@@ -111,14 +111,24 @@ export default function MediaRow({ title, items, isTop10 = false }: MediaRowProp
                                 )}
 
                                 {!isTop10 && (
-                                    <div className="relative w-full h-full rounded-md overflow-hidden">
+                                    <div className="relative w-full h-full rounded-md overflow-hidden bg-zinc-800">
                                         <Image
-                                            src={item.poster} // Le righe normali continuano a usare il poster orizzontale
+                                            src={item.poster}
                                             alt={item.title}
                                             fill
                                             className="object-cover"
                                             sizes="(max-width: 768px) 160px, 260px"
                                         />
+                                        
+                                        {/* Rendering Barra di avanzamento */}
+                                        {isContinueWatching && item.progress !== undefined && (
+                                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-600/80">
+                                                <div 
+                                                    className="h-full bg-[#E50914]" 
+                                                    style={{ width: `${Math.min(Math.max(item.progress, 0), 100)}%` }} 
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </Link>
@@ -126,7 +136,6 @@ export default function MediaRow({ title, items, isTop10 = false }: MediaRowProp
                     })}
                 </div>
 
-                {/* Freccia Destra (Trasparente, visibile solo se non si è alla fine) */}
                 {canScrollRight && (
                     <button 
                         onClick={() => scroll("right")}

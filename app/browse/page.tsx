@@ -13,6 +13,7 @@ import Footer from "@/components/browse/Footer";
 
 import { getBrowseData } from "@/app/actions/media";
 
+// 1. Estensione dell'interfaccia MediaItem per supportare la barra di progresso
 interface MediaItem {
     id: string;
     title: string;
@@ -20,12 +21,17 @@ interface MediaItem {
     poster: string;
     vposter: string;
     type: string;
+    progress?: number;
+    resumeTime?: number;
 }
 
+// 2. Estensione dell'interfaccia CarouselRow per il routing delle props al MediaRow
 interface CarouselRow {
     id: string;
     title: string;
     items: MediaItem[];
+    isTop10?: boolean;
+    isContinueWatching?: boolean;
 }
 
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -40,6 +46,9 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 const BrowseContent = ({ profileId }: { profileId: number }) => {
     const searchParams = useSearchParams();
     const selectedMediaId = searchParams.get("id");
+    
+    // Estrazione del profilo completo per accedere a nome_profilo
+    const { selectedProfile } = useProfiles();
 
     const [mediaRows, setMediaRows] = useState<CarouselRow[]>([]);
     const [heroItem, setHeroItem] = useState<MediaItem | null>(null);
@@ -53,6 +62,7 @@ const BrowseContent = ({ profileId }: { profileId: number }) => {
             const data = await getBrowseData(profileId);
             if (!isMounted) return;
 
+            // Selezione Hero
             const coinFlip = Math.random() < 0.5;
             const firstTopMovie = data.topMovies?.[0];
             const firstTopSeries = data.topSeries?.[0];
@@ -60,16 +70,30 @@ const BrowseContent = ({ profileId }: { profileId: number }) => {
             if (!selectedHero) selectedHero = firstTopMovie || firstTopSeries;
             setHeroItem(selectedHero || null);
 
+            // Definizione righe standard soggette a shuffle
             const structuredRows: CarouselRow[] = [
                 { id: "my-list", title: "La mia lista", items: data.myList || [] },
                 { id: "series", title: "Serie TV", items: data.series || [] },
                 { id: "movies", title: "Film", items: data.movies || [] },
-                { id: "top-10-movies", title: "Top 10 dei film in Italia oggi", items: data.topMovies || [] },
-                { id: "top-10-series", title: "Top 10 delle serie TV in Italia oggi", items: data.topSeries || [] },
+                { id: "top-10-movies", title: "Top 10 dei film in Italia oggi", items: data.topMovies || [], isTop10: true },
+                { id: "top-10-series", title: "Top 10 delle serie TV in Italia oggi", items: data.topSeries || [], isTop10: true },
             ];
 
+            // Filtraggio e shuffle delle righe generiche
             const validRows = structuredRows.filter((row) => row.items.length > 0);
-            setMediaRows(shuffleArray(validRows));
+            const finalRows = shuffleArray(validRows);
+
+            // Iniezione forzata della riga "Continua a guardare" in posizione 0 (se sono presenti dati)
+            if (data.continueWatching && data.continueWatching.length > 0) {
+                finalRows.unshift({
+                    id: "continue-watching",
+                    title: `${selectedProfile?.nome_profilo}, continua a guardare:`,
+                    items: data.continueWatching,
+                    isContinueWatching: true
+                });
+            }
+
+            setMediaRows(finalRows);
             setIsLoadingData(false);
         };
 
@@ -77,7 +101,7 @@ const BrowseContent = ({ profileId }: { profileId: number }) => {
         return () => {
             isMounted = false;
         };
-    }, [profileId]);
+    }, [profileId, selectedProfile]);
 
     return (
         <div
@@ -102,7 +126,8 @@ const BrowseContent = ({ profileId }: { profileId: number }) => {
                                 key={row.id}
                                 title={row.title}
                                 items={row.items}
-                                isTop10={row.id.includes("top-10")}
+                                isTop10={row.isTop10} // Utilizzo del flag tipizzato nell'interfaccia
+                                isContinueWatching={row.isContinueWatching} // Passaggio flag per la progress bar
                             />
                         ))
                     )}

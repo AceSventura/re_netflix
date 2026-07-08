@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation"; // Aggiunto usePathname
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Play, Plus, Check, X, ThumbsUp, Volume2, ChevronDown } from "lucide-react";
@@ -30,7 +30,7 @@ interface MediaDetail {
 export default function MovieDetailModal() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const pathname = usePathname(); // Rileva dinamicamente il percorso (/browse, /browse/movies, ecc.)
+    const pathname = usePathname(); 
     
     const id = searchParams.get("id");
     const type = searchParams.get("type");
@@ -79,9 +79,7 @@ export default function MovieDetailModal() {
 
         const loadFavoriteStatus = async () => {
             if (!id || !selectedProfile?.id_profilo || !type) {
-                if (isMounted) {
-                    setIsFavorite(false);
-                }
+                if (isMounted) setIsFavorite(false);
                 return;
             }
 
@@ -89,14 +87,23 @@ export default function MovieDetailModal() {
 
             try {
                 const response = await fetch(`/api/favorites?idProfilo=${selectedProfile.id_profilo}&idContenuto=${id}&tipo=${normalizedType}`);
-                if (!response.ok) throw new Error("Errore nel recupero stato preferiti");
+                
+                // FIX: Se l'API restituisce 404, il contenuto non è nei preferiti. Non è un errore.
+                if (response.status === 404) {
+                    if (isMounted) setIsFavorite(false);
+                    return;
+                }
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                 const data = await response.json();
                 if (isMounted) {
-                    setIsFavorite(Boolean(data?.data?.isFavorite));
+                    // Controllo resiliente sulla struttura della risposta
+                    setIsFavorite(Boolean(data?.data?.isFavorite || data?.isFavorite || data?.data));
                 }
             } catch (error) {
-                console.error("Errore nel recupero dello stato preferiti:", error);
+                console.warn("Avviso: Impossibile determinare lo stato dei preferiti. Default a false.", error);
+                if (isMounted) setIsFavorite(false);
             }
         };
 
@@ -126,9 +133,7 @@ export default function MovieDetailModal() {
 
         const loadEpisodeResumeInfo = async () => {
             if (!selectedProfile?.id_profilo || !movie?.episodes?.length) {
-                if (isMounted) {
-                    setEpisodeResumeTimes({});
-                }
+                if (isMounted) setEpisodeResumeTimes({});
                 return;
             }
 
@@ -163,7 +168,6 @@ export default function MovieDetailModal() {
 
     const closeModal = () => {
         setIsVisible(false);
-        // Sostituito il percorso fisso con 'pathname' per preservare la categoria corrente
         setTimeout(() => router.push(pathname, { scroll: false }), 300);
     };
 

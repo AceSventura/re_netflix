@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// DISATTIVAZIONE CACHE NEXT.JS (Fondamentale per i generatori di flussi)
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 

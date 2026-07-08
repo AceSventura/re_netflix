@@ -9,7 +9,7 @@ const NetflixAdsBanner = () => {
       <div className="flex flex-col md:flex-row items-center gap-4">
         
         {/* 1. ICONA SVG ESTERNA AL BANNER */}
-        <div className="flex-shrink-0 mb-4 md:mb-0">
+        <div className="shrink-0 mb-4 md:mb-0">
         <svg width="96" height="96" fill="none">
             <path d="M48 95.213c26.51 0 48-3.875 48-8.656 0-4.78-21.49-8.655-48-8.655S0 81.777 0 86.557c0 4.78 21.49 8.656 48 8.656Z" fill="url(#a)"></path>
             <path d="M48 77.115c26.51 0 48-17.087 48-38.164C96 17.873 74.51.787 48 .787S0 17.874 0 38.95s21.49 38.164 48 38.164Z" fill="url(#b)"></path>

@@ -45,10 +45,8 @@ export default function WatchPage({ params }: PageProps) {
   const { selectedProfile } = useProfiles();
   const progressLastSavedRef = useRef<number | null>(null);
   
-  // Il route param contiene l'id del contenuto da riprodurre.
   const resolvedParams = use(params);
   const targetId = resolvedParams.id;
-  // Manteniamo il profilo attivo in una variabile stabile per evitare dipendenze fragili nei callback ed effetti.
   const profileId = selectedProfile?.id_profilo;
 
   const [metadata, setMetadata] = useState<ContentMetadata | null>(null);
@@ -74,7 +72,6 @@ export default function WatchPage({ params }: PageProps) {
   const currentEpIndex = metadata?.episodi?.findIndex(ep => ep.isCurrent) ?? -1;
   const nextEpisode = (currentEpIndex !== -1 && metadata?.episodi) ? metadata.episodi[currentEpIndex + 1] : null;
 
-  // Carichiamo i metadati di interfaccia del contenuto una volta che l'id è disponibile.
   useEffect(() => {
     const fetchUIContent = async () => {
       try {
@@ -89,7 +86,6 @@ export default function WatchPage({ params }: PageProps) {
     fetchUIContent();
   }, [targetId]);
 
-  // Se esiste già un progresso salvato per questo profilo e contenuto, lo ripristiniamo dal database.
   useEffect(() => {
     const loadProgress = async () => {
       if (!profileId || !targetId) {
@@ -119,8 +115,8 @@ export default function WatchPage({ params }: PageProps) {
     loadProgress();
   }, [profileId, targetId]);
 
-  // Persistiamo il punto di riproduzione in modo incrementale, così il watch experience è resilient anche a refresh o chiusura della pagina.
-  const saveProgress = useCallback(async (seconds: number, completed = false) => {
+  // FIX: Modificata la firma per accettare una percentuale numerica invece di un booleano
+  const saveProgress = useCallback(async (seconds: number, percentage: number) => {
     if (!profileId || !targetId || !Number.isFinite(seconds) || seconds < 5) return;
 
     try {
@@ -130,7 +126,7 @@ export default function WatchPage({ params }: PageProps) {
         body: JSON.stringify({
           idProfilo: profileId,
           durataVisualizzata: Math.floor(seconds),
-          statoCompletamento: completed,
+          statoCompletamento: percentage, // Invia il dato numerico calcolato
         }),
       });
     } catch (error) {
@@ -138,7 +134,6 @@ export default function WatchPage({ params }: PageProps) {
     }
   }, [profileId, targetId]);
 
-  // Quando il progresso recuperato è pronto e la durata del video è nota, impostiamo il timestamp di ripresa.
   useEffect(() => {
     const video = videoRef.current;
     if (!video || resumeTime === null || duration <= 0) return;
@@ -147,7 +142,6 @@ export default function WatchPage({ params }: PageProps) {
     video.currentTime = safeResumeTime;
   }, [resumeTime, duration]);
 
-  // Salviamo il progresso periodicamente mentre il video viene visto, evitando spam inutili sul database.
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !profileId || !targetId) return;
@@ -157,13 +151,14 @@ export default function WatchPage({ params }: PageProps) {
       if (!Number.isFinite(current) || current < 5 || current === progressLastSavedRef.current) return;
 
       progressLastSavedRef.current = current;
-      void saveProgress(current, duration > 0 && current >= duration - 2);
+      // FIX: Calcolo matematico della percentuale
+      const percentage = duration > 0 ? Math.floor((current / duration) * 100) : 0;
+      void saveProgress(current, percentage);
     }, 10000);
 
     return () => window.clearInterval(interval);
   }, [profileId, targetId, duration, saveProgress]);
 
-  // Prima di lasciare la pagina, salviamo l'ultima posizione nota per non perdere il punto di ripresa.
   useEffect(() => {
     const video = videoRef.current;
 
@@ -174,11 +169,12 @@ export default function WatchPage({ params }: PageProps) {
       if (!Number.isFinite(current) || current < 5 || current === progressLastSavedRef.current) return;
 
       progressLastSavedRef.current = current;
-      void saveProgress(current, duration > 0 && current >= duration - 2);
+      // FIX: Calcolo matematico della percentuale
+      const percentage = duration > 0 ? Math.floor((current / duration) * 100) : 0;
+      void saveProgress(current, percentage);
     };
   }, [profileId, targetId, duration, saveProgress]);
 
-  // Inizializziamo lo stream HLS e il player video una volta che il contenuto è pronto.
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !targetId) return;
@@ -232,7 +228,6 @@ export default function WatchPage({ params }: PageProps) {
     };
   }, [targetId]);
 
-  // Manteniamo il player sincronizzato con lo stato di riproduzione.
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -243,12 +238,10 @@ export default function WatchPage({ params }: PageProps) {
     }
   }, [isPlaying]);
 
-  // Aggiorniamo il volume del video ogni volta che cambia lo stato locale.
   useEffect(() => {
     if (videoRef.current) videoRef.current.volume = isMuted ? 0 : volume / 100;
   }, [volume, isMuted]);
 
-  // Nascondiamo i controlli dopo un breve timeout per ottenere un'esperienza più pulita.
   useEffect(() => {
     if (!showControls) return;
     const timer = setTimeout(() => setShowControls(false), 4000);
@@ -344,7 +337,7 @@ export default function WatchPage({ params }: PageProps) {
                   <span className="text-sm font-light ml-2">{formatTime(currentTime)} / {formatTime(duration)}</span>
                 </div>
 
-                {/* SETTORE CENTRALE (Titolo Episodio - Centrato Assoluto) */}
+                {/* SETTORE CENTRALE */}
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
                   {metadata?.tipo === 'serie_tv' ? (
                     <>

@@ -1,12 +1,10 @@
-'use server';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 interface ProgressUpdateRequest {
   idProfilo: number;
   durataVisualizzata: number;
-  statoCompletamento?: boolean;
+  statoCompletamento?: number; // Modificato da boolean a number
 }
 
 interface RouteParams {
@@ -20,9 +18,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body: ProgressUpdateRequest = await request.json();
 
     const { idProfilo, durataVisualizzata, statoCompletamento } = body;
-    // Normalizziamo il valore di completamento in modo compatibile con il tipo numerico del modello Prisma.
-    const normalizedCompletion = typeof statoCompletamento === 'boolean'
-      ? (statoCompletamento ? 1 : 0)
+    
+    // Normalizzazione sicura: assicuriamo che il valore sia un numero intero
+    const normalizedCompletion = typeof statoCompletamento === 'number'
+      ? Math.round(statoCompletamento)
       : 0;
 
     if (!idProfilo || durataVisualizzata === undefined) {

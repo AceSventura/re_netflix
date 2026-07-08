@@ -1,10 +1,10 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Bell, ChevronDown, Pencil, User, HelpCircle } from "lucide-react";
+import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, X } from "lucide-react";
 
 import { logoutUser } from "@/app/actions/auth";
 import { setActiveProfile } from "@/app/actions/profiles";
@@ -14,8 +14,9 @@ const AVATAR_FALLBACK = "/avatars/1.jpg";
 
 export default function Navbar() {
     const router = useRouter();
-    const { profiles, selectProfile, selectedProfile } = useProfiles();
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const { profiles, selectProfile, selectedProfile } = useProfiles();
 
     const otherProfiles = profiles.filter((profile) => profile.id_profilo !== selectedProfile?.id_profilo);
 
@@ -27,16 +28,81 @@ export default function Navbar() {
         { name: "La mia lista", href: "/browse/my-list" },
     ];
 
+    // 1. Sincronizzazione sicura dello stato (Pattern raccomandato da React 18+)
+    // Evita l'errore "Avoid calling setState directly within an effect"
+    const currentUrlQuery = searchParams.get("q") || "";
+    const [prevUrlQuery, setPrevUrlQuery] = useState(currentUrlQuery);
+    const [searchQuery, setSearchQuery] = useState(currentUrlQuery);
+    const [isSearchExpanded, setIsSearchExpanded] = useState(currentUrlQuery.length > 0);
+
+    // Se l'URL cambia esternamente (es. tasto Indietro del browser), allineiamo lo stato durante il render
+    if (currentUrlQuery !== prevUrlQuery) {
+        setPrevUrlQuery(currentUrlQuery);
+        setSearchQuery(currentUrlQuery);
+        if (currentUrlQuery.length > 0) {
+            setIsSearchExpanded(true);
+        }
+    }
+
     const [isScrolled, setIsScrolled] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+    
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const debounceTimerRef = useRef<number | null>(null);
+
+    // Pulizia del timer alla distruzione del componente
+    useEffect(() => {
+        return () => {
+            if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
+        };
+    }, []);
 
     useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 10);
-        };
+        const handleScroll = () => setIsScrolled(window.scrollY > 10);
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    // Focus automatico sull'input
+    useEffect(() => {
+        if (isSearchExpanded && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isSearchExpanded]);
+
+    // 2. Gestione attiva dell'input (Debounce imperativo)
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setSearchQuery(val); // Aggiorna istantaneamente la UI locale
+
+        // Cancella il timer precedente se l'utente sta ancora scrivendo
+        if (debounceTimerRef.current) {
+            window.clearTimeout(debounceTimerRef.current);
+        }
+
+        // Imposta un nuovo timer per il push alla pagina di ricerca
+        debounceTimerRef.current = window.setTimeout(() => {
+            const trimmed = val.trim();
+            if (trimmed.length > 0) {
+                router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+            } else if (pathname === '/search') {
+                router.push('/browse');
+            }
+        }, 300);
+    };
+
+    const handleClearSearch = () => {
+        setSearchQuery("");
+        if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
+        
+        if (pathname === '/search') {
+            router.push('/browse');
+        }
+        
+        if (searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    };
 
     const handleProfileSwitch = async (profile: Profile) => {
         try {
@@ -49,10 +115,6 @@ export default function Navbar() {
         } catch (error) {
             console.error("Errore nel cambio profilo:", error);
         }
-    };
-
-    const handleManageProfiles = () => {
-        router.push("/profiles");
     };
 
     const handleLogout = async () => {
@@ -103,8 +165,47 @@ export default function Navbar() {
             </div>
 
             {/* GRUPPO DESTRA */}
-            <div className="flex items-center gap-5 text-white">
-                <Search className="cursor-pointer w-5 h-5 hover:text-gray-300" />
+            <div className="flex items-center gap-5 text-white relative">
+                <div className="relative hidden md:flex items-center h-9">
+                    {/* Contenitore Search */}
+                    <div 
+                        className={`flex items-center transition-all duration-300 ease-in-out ${
+                            isSearchExpanded ? "border border-white bg-black/70" : "border-transparent bg-transparent"
+                        }`}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+                            className="p-2 text-white"
+                            aria-label="Cerca"
+                        >
+                            <Search className="w-5 h-5" />
+                        </button>
+                        <input
+                            ref={searchInputRef}
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            placeholder="Titoli, persone, generi"
+                            onBlur={() => {
+                                if (!searchQuery.trim()) setIsSearchExpanded(false);
+                            }}
+                            className={`transition-all duration-300 ease-in-out bg-transparent text-sm text-white outline-none placeholder:text-zinc-400 ${
+                                isSearchExpanded ? "w-52 px-2 opacity-100" : "w-0 px-0 opacity-0 border-none"
+                            }`}
+                        />
+                        {isSearchExpanded && searchQuery && (
+                            <button
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={handleClearSearch}
+                                className="p-2 text-zinc-400 hover:text-white"
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+
                 <span className="hidden sm:inline text-[13px] cursor-pointer hover:text-gray-300">Bambini</span>
                 
                 <div className="relative cursor-pointer">
@@ -130,14 +231,11 @@ export default function Navbar() {
                         <ChevronDown size={14} className={`transition-transform duration-300 ${showProfileMenu ? "rotate-180" : ""}`} />
                     </div>
 
-                    {/* DROPDOWN MENU DINAMICO */}
                     {showProfileMenu && (
                         <div className="absolute right-0 top-full pt-4 w-56 animate-in fade-in duration-200">
-                            {/* Triangolino */}
                             <div className="absolute top-2 right-4 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-b-8 border-b-zinc-100/10" />
                             
                             <div className="bg-black/95 border border-zinc-800 text-white text-[13px] shadow-xl">
-                                {/* Lista Profili Altri */}
                                 <div className="p-3 space-y-3">
                                     {otherProfiles.map((profile) => (
                                         <button
@@ -161,11 +259,10 @@ export default function Navbar() {
 
                                 <div className="h-px bg-zinc-800" />
 
-                                {/* Azioni */}
                                 <div className="p-3 space-y-3">
                                     <button
                                         type="button"
-                                        onClick={handleManageProfiles}
+                                        onClick={() => router.push("/account/profiles")}
                                         className="flex w-full items-center gap-3 group/item cursor-pointer text-left"
                                     >
                                         <Pencil size={18} className="text-zinc-400" />
@@ -192,7 +289,6 @@ export default function Navbar() {
 
                                 <div className="h-px bg-zinc-800" />
 
-                                {/* Logout: Resetta il profilo a null */}
                                 <button
                                     type="button"
                                     onClick={() => void handleLogout()}
