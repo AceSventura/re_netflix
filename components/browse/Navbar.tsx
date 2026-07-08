@@ -206,12 +206,7 @@ export default function Navbar() {
                     </div>
                 </div>
 
-                <span className="hidden sm:inline text-[13px] cursor-pointer hover:text-gray-300">Bambini</span>
-                
-                <div className="relative cursor-pointer">
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute -top-1.5 -right-1.5 bg-[#E50914] text-[9px] font-bold px-1 rounded-sm">13</span>
-                </div>
+
 
                 {/* CONTENITORE PROFILO + DROPDOWN */}
                 <div 

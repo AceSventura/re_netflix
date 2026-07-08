@@ -10,15 +10,18 @@ export async function getBrowseData(profileId?: number) {
             where: { tipo: "film" }
         });
         
-        // 2. Estrazione Top 10
+        // 2. Estrazione Top 10 (Ottimizzata tramite interazioni)
+        // Calcolo della top 10 delle Serie TV basata sul numero di valutazioni ricevute
         const topSeries = await prisma.serie_tv.findMany({
             take: 10,
-            orderBy: { id_serie_tv: 'desc' }
+            orderBy: { valutazioni: { _count: 'desc' } }
         });
+        
+        // Calcolo della top 10 dei Film basata sul numero effettivo di visualizzazioni (tabella 'guarda')
         const topMovies = await prisma.contenuti.findMany({
             where: { tipo: "film" },
             take: 10,
-            orderBy: { id_contenuto: 'desc' }
+            orderBy: { guarda: { _count: 'desc' } }
         });
 
         // 3. Estrazione "La mia lista" e "Continua a guardare" per lo specifico profilo
@@ -77,7 +80,7 @@ export async function getBrowseData(profileId?: number) {
                     const parentSeriesId = entry.contenuti.stagioni?.id_serie_tv;
                     const isSeriesEpisode = entry.contenuti.tipo !== "film" && parentSeriesId !== null && parentSeriesId !== undefined;
                     const resolvedId = isSeriesEpisode ? parentSeriesId.toString() : entry.contenuti.id_contenuto.toString();
-                    const resolvedType = isSeriesEpisode ? "serie_tv" : "film";
+                    const resolvedType = isSeriesEpisode ? "serie" : "film";
                     const resolvedTitle = isSeriesEpisode
                         ? entry.contenuti.stagioni?.serie_tv?.titolo_serie_tv ?? entry.contenuti.titolo_contenuto
                         : entry.contenuti.titolo_contenuto;
@@ -95,7 +98,7 @@ export async function getBrowseData(profileId?: number) {
                         vposter: resolvedVPoster,
                         type: resolvedType,
                         resumeTime: entry.durata_visualizzata ?? 0,
-                        progress: entry.stato_completamento ?? 0, // <-- Aggiunto il mapping dello stato di completamento
+                        progress: entry.stato_completamento ?? 0, 
                     };
                 })
                 .sort((a, b) => (b.resumeTime ?? 0) - (a.resumeTime ?? 0))
@@ -217,7 +220,6 @@ export async function getMediaDetails(id: string, type: string) {
                     desc: ep.descrizione || "Nessuna descrizione disponibile.",
                     time: ep.durata ? `${ep.durata} min` : "N/D",
                     image: ep.copertina_url || "https://picsum.photos/300/200?random=3",
-                    // Aggiunta del parametro mancante per il raggruppamento nel frontend
                     season: stagione.numero_stagione 
                 }))
             );
@@ -245,7 +247,6 @@ export async function getMediaDetails(id: string, type: string) {
 
 export async function getAllMovies() {
     try {
-        // Estrae solo i film (contenuti senza legami con stagioni)
         const movies = await prisma.contenuti.findMany({
             where: { id_stagione: null },
             select: {
@@ -285,7 +286,7 @@ export async function getAllSeries() {
             title: s.titolo_serie_tv,
             poster: s.img_hero || "https://picsum.photos/300/200?random=2",
             vposter: s.vposter_url || "https://picsum.photos/400/600?random=2",
-            type: "serie_tv"
+            type: "serie" // Allineato con il resto del sistema (rimosso "serie_tv")
         }));
     } catch (error) {
         console.error("Errore recupero serie tv:", error);
@@ -293,49 +294,116 @@ export async function getAllSeries() {
     }
 }
 
-export async function getMyListFromId(profileId?: number | null) {
+export async function getMyListFromId(profileId?: number) {
+    const savedMovies = await prisma.salva_film.findMany({
+        where: { id_profilo: profileId },
+        include: { contenuti: true }
+    });
+    
+    const savedSeries = await prisma.salva_serie.findMany({
+        where: { id_profilo: profileId },
+        include: { serie_tv: true }
+    });
 
-    // Estrazione "La mia lista" per lo specifico profilo
-    let myList: Array<{ id: string; title: string; poster: string; vposter: string; type: string }> = [];
+    const formattedSavedMovies = savedMovies.map(sm => ({
+        id: sm.contenuti.id_contenuto.toString(),
+        title: sm.contenuti.titolo_contenuto,
+        poster: sm.contenuti.copertina_url || "https://picsum.photos/640/360?random=3",
+        vposter: sm.contenuti.vposter_url || "https://picsum.photos/400/600?random=3",
+        type: "film"
+    }));
 
-    if (profileId) {
-        console.log("Profile: ", profileId);
-        // Recupera i film salvati dal profilo
-        const savedMovies = await prisma.salva_film.findMany({
-            where: { id_profilo: profileId },
-            include: { contenuti: true }
-        });
-        
-        // Recupera le serie salvate dal profilo
-        const savedSeries = await prisma.salva_serie.findMany({
-            where: { id_profilo: profileId },
-            include: { serie_tv: true }
-        });
+    const formattedSavedSeries = savedSeries.map(ss => ({
+        id: ss.serie_tv.id_serie_tv.toString(),
+        title: ss.serie_tv.titolo_serie_tv,
+        poster: ss.serie_tv.img_hero || "https://picsum.photos/640/360?random=4",
+        vposter: ss.serie_tv.vposter_url || "https://picsum.photos/400/600?random=4",
+        type: "serie"
+    }));
 
-        // Normalizza i film salvati
-        const formattedSavedMovies = savedMovies.map(sm => ({
-            id: sm.contenuti.id_contenuto.toString(),
-            title: sm.contenuti.titolo_contenuto,
-            poster: sm.contenuti.copertina_url || "https://picsum.photos/640/360?random=3",
-            vposter: sm.contenuti.vposter_url || "https://picsum.photos/400/600?random=3",
+    return [...formattedSavedMovies, ...formattedSavedSeries];
+}
+
+export async function getNewAndPopularData() {
+    try {
+        const currentYear = new Date().getFullYear();
+
+        const [recentMovies, recentSeries, popularMovies, popularSeries] = await Promise.all([
+            // 1. Film recenti
+            prisma.contenuti.findMany({
+                where: { 
+                    tipo: "film",
+                    anno_rilascio: { gte: currentYear - 1 }
+                },
+                orderBy: { anno_rilascio: "desc" },
+                take: 10
+            }),
+            // 2. Serie recenti
+            prisma.serie_tv.findMany({
+                where: {
+                    anno_inizio: { gte: currentYear - 1 }
+                },
+                orderBy: { anno_inizio: "desc" },
+                take: 10
+            }),
+            // 3. Film popolari
+            prisma.contenuti.findMany({
+                where: { tipo: "film" },
+                orderBy: { guarda: { _count: "desc" } },
+                take: 10
+            }),
+            // 4. Serie popolari
+            prisma.serie_tv.findMany({
+                orderBy: { valutazioni: { _count: "desc" } },
+                take: 10
+            })
+        ]);
+
+        const formattedRecentMovies = recentMovies.map(m => ({
+            id: m.id_contenuto.toString(),
+            title: m.titolo_contenuto,
+            poster: m.copertina_url || "https://picsum.photos/640/360?random=8",
+            vposter: m.vposter_url || "https://picsum.photos/400/600?random=8",
             type: "film"
         }));
 
-        // Normalizza le serie salvate
-        const formattedSavedSeries = savedSeries.map(ss => ({
-            id: ss.serie_tv.id_serie_tv.toString(),
-            title: ss.serie_tv.titolo_serie_tv,
-            poster: ss.serie_tv.img_hero || "https://picsum.photos/640/360?random=4",
-            vposter: ss.serie_tv.vposter_url || "https://picsum.photos/400/600?random=4",
+        const formattedRecentSeries = recentSeries.map(s => ({
+            id: s.id_serie_tv.toString(),
+            title: s.titolo_serie_tv,
+            poster: s.img_hero || "https://picsum.photos/640/360?random=9",
+            vposter: s.vposter_url || "https://picsum.photos/400/600?random=9",
             type: "serie"
         }));
 
-        // Unifica i contenuti salvati in un unico carosello
-        myList = [...formattedSavedMovies, ...formattedSavedSeries];
-        return myList;
-    }else {
-        // Restituisco errore
-        throw new Error("Profile ID is required to fetch 'My List'.");
+        const formattedPopularMovies = popularMovies.map(m => ({
+            id: m.id_contenuto.toString(),
+            title: m.titolo_contenuto,
+            poster: m.copertina_url || "https://picsum.photos/640/360?random=10",
+            vposter: m.vposter_url || "https://picsum.photos/400/600?random=10",
+            type: "film"
+        }));
+
+        const formattedPopularSeries = popularSeries.map(s => ({
+            id: s.id_serie_tv.toString(),
+            title: s.titolo_serie_tv,
+            poster: s.img_hero || "https://picsum.photos/640/360?random=11",
+            vposter: s.vposter_url || "https://picsum.photos/400/600?random=11",
+            type: "serie"
+        }));
+
+        return {
+            success: true,
+            newReleases: [...formattedRecentMovies, ...formattedRecentSeries],
+            popularNow: [...formattedPopularMovies, ...formattedPopularSeries]
+        };
+
+    } catch (error) {
+        console.error("Errore nell'estrazione dei dati nuovi e popolari:", error);
+        return {
+            success: false,
+            newReleases: [],
+            popularNow: [],
+            error: "Errore durante il recupero dei contenuti."
+        };
     }
-    return [];
 }
