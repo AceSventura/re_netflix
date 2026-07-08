@@ -50,7 +50,7 @@ const Membership: React.FC = () => {
           <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-6">
               <h3 className="text-[16px] font-bold text-black">Prossimo pagamento</h3>
-              <p className="text-black text-[14px] mt-1 font-medium">28 febbraio 2026</p>
+              <p className="text-black text-[14px] mt-1 font-medium">28 luglio 2026</p>
               
               <div className="flex items-center gap-2 mt-3">
                 <img 
@@ -58,7 +58,7 @@ const Membership: React.FC = () => {
                   alt="PayPal" 
                   className="w-8 h-auto object-contain"
                 />
-                <span className="text-[14px] text-black">fa•••@gmail.com</span>
+                <span className="text-[14px] text-black">chat•••@gmail.com</span>
               </div>
             </div>
 

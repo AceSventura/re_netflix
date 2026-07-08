@@ -38,7 +38,7 @@ const Panoramica: React.FC = () => {
             <p className="text-[#737373] text-[14px] mt-1 font-medium">Prossimo pagamento: 28 febbraio 2026</p>
             <div className="flex items-center gap-2 mt-4">
               <img src="https://assets.nflxext.com/siteui/acquisition/payment/ffe/paymentpicker/PAYPAL.png" alt="PayPal" className="w-8 h-auto" />
-              <span className="text-[14px] text-black">fa•••@gmail.com</span>
+              <span className="text-[14px] text-black">chat•••@gmail.com</span>
             </div>
           </div>
           <Link href="/account/membership" className="flex justify-between items-center p-5 border-t border-gray-100 hover:bg-gray-50 group transition-colors">

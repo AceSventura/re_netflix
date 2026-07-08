@@ -32,7 +32,7 @@ const Security: React.FC = () => {
             />
             <SecurityItem 
               label="Email" 
-              subValue="fabio0442@gmail.com" 
+              subValue="chatalexalexchat@gmail.com" 
               error="Verifica necessaria"
               icon={<EmailIcon />} 
               href="#" 
