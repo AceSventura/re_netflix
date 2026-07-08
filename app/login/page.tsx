@@ -1,53 +1,62 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Stati per il controllo del flusso
   const [step, setStep] = useState<"identifier" | "otp">("identifier");
-  const [emailPhone, setEmailPhone] = useState("");
+  const [emailPhone, setEmailPhone] = useState(searchParams.get("email") || "");
   const [otp, setOtp] = useState<string[]>(new Array(4).fill(""));
   const [helpExpanded, setHelpExpanded] = useState(false);
-  
-  // Stato per mostrare errori provenienti dal backend
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const inputRefs = useRef<HTMLInputElement[]>([]);
 
-  // --- STEP 1: Invia Email al Backend ---
-  const handleIdentifierSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(""); // Pulisci errori precedenti
+  // 1. Definiamo la funzione con useCallback PER PRIMA
+  const handleIdentifierSubmit = useCallback(async (e: React.FormEvent | null, emailToUse?: string) => {
+    if (e) e.preventDefault();
+    setErrorMessage("");
 
-    if (emailPhone.trim()) {
+    const targetEmail = emailToUse || emailPhone;
+
+    if (targetEmail.trim()) {
+      setIsLoading(true);
       try {
         const res = await fetch("/api/auth/send-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: emailPhone })
+          body: JSON.stringify({ email: targetEmail })
         });
         
         const data = await res.json();
         
         if (res.ok && data.success) {
-          if (data.devOtpCode) {
-            console.log("CODICE OTP DI TEST:", data.devOtpCode);
-          }
+          setEmailPhone(targetEmail);
           setStep("otp");
         } else {
           setErrorMessage(data.error || "Si è verificato un errore.");
         }
       } catch (err) {
-        console.error(err);
         setErrorMessage("Errore di connessione al server.");
+      } finally {
+        setIsLoading(false);
       }
     }
-  };
+  }, [emailPhone]); // Dipendenze
+
+  // 2. Usiamo useEffect DOPO la dichiarazione della funzione
+  useEffect(() => {
+    const emailFromUrl = searchParams.get("email");
+    if (emailFromUrl) {
+      handleIdentifierSubmit(null, emailFromUrl);
+    }
+  }, [searchParams, handleIdentifierSubmit]);
 
   // --- STEP 2: Verifica Codice OTP al Backend ---
   const verifyCode = async (completedOtp: string) => {
