@@ -1,9 +1,8 @@
-// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Route accessibili senza sessione attiva
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/"];
 
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -28,11 +27,12 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL("/browse", request.url));
     }
 
-    // 3. Root -> redirect a seconda dello stato
+    // 3. Root -> se loggato reindirizza a /browse. Se non loggato, consente la visualizzazione della pagina.
     if (pathname === "/") {
-        return NextResponse.redirect(
-            new URL(isLoggedIn ? "/browse" : "/login", request.url)
-        );
+        if (isLoggedIn) {
+            return NextResponse.redirect(new URL("/browse", request.url));
+        }
+        return NextResponse.next();
     }
 
     // 4. Loggato ma senza profilo attivo e prova ad accedere a contenuti
