@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation"; // Aggiunto useSearchParams
 import { useEffect, useState } from "react";
 import Navbar from "@/components/browse/Navbar"; 
-import { getAllMovies, getAllSeries, getMyListFromId } from "@/app/actions/media";
+import { getAllMovies, getAllSeries, getMyListFromId, getNewAndPopularData } from "@/app/actions/media";
 import MovieDetailModal from "@/components/browse/MovieDetailModal";
 import { useProfiles } from "@/context/ProfileContext";
 
@@ -34,6 +34,7 @@ export default function CategoryPage() {
             case "series": return "Serie TV";
             case "movies": return "Film";
             case "my-list": return "La mia lista";
+            case "latest": return "Nuovi e popolari"
             default: return "Sfoglia";
         }
     };
@@ -50,6 +51,20 @@ export default function CategoryPage() {
             } else if (category === "my-list") {
                 const data = await getMyListFromId(selectedProfile?.id_profilo);
                 setContent(data);
+            } else if (category === "latest") {
+                const data = await getNewAndPopularData();
+                
+                if (data.success) {
+                    // Estrae gli array e li combina tramite spread operator
+                    const combinedData = [...(data.newReleases || []), ...(data.popularNow || [])];
+                    
+                    // Operazione opzionale: rimozione dei duplicati (se un media è sia nuovo che popolare)
+                    const uniqueData = Array.from(new Map(combinedData.map(item => [item.id, item])).values());
+                    
+                    setContent(uniqueData);
+                } else {
+                    setContent([]);
+                }
             }
         };
 
