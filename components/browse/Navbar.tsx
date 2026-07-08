@@ -59,7 +59,6 @@ export default function Navbar() {
         try {
             const res = await logoutUser();
             if (res.success) {
-                selectProfile(null);
                 router.push("/login");
                 router.refresh();
             }
