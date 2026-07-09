@@ -1,17 +1,69 @@
 "use client";
 
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { getActiveProfile, switchProfile } from "@/app/actions/profiles";
+
+interface ActiveProfile {
+  id_profilo: number;
+  nome_profilo: string;
+  avatar_url: string | null;
+}
 
 const AccountNavbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [profile, setProfile] = useState<ActiveProfile | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await getActiveProfile();
+        if (res.success && res.profile) {
+          setProfile(res.profile);
+        }
+      } catch (error) {
+        console.error("Errore nel recupero del profilo:", error);
+      }
+    }
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    router.push("/logout");
+  };
+
+  const handleSwitchProfile = async () => {
+    try {
+      await switchProfile();
+      router.refresh();
+      // Dopo aver cambiato profilo, potresti voler ricaricare o fare un redirect
+      // router.refresh(); o router.push("/browse");
+    } catch (error) {
+      console.error("Errore durante il cambio profilo:", error);
+    }
+  };
+
+  const avatarSrc = profile?.avatar_url || "https://occ-0-2135-2581.1.nflxso.net/dnm/api/v6/SO2HoVCx33X8phZh2pZZmQ4QgNY/AAAABaEZAmr6k9h96-doKWxdUfUcAgUKY18xnhWDruqwhaEbG2bDAYjtd6pcIXvx9NzwJLfLbSJaMkqXp5prdK3PiDPvgtFoz6EMmA.png?r=229";
+
   return (
-    <header className="w-full bg-white border-b border-gray-200 shadow-sm">
-      {/* Usiamo un container interno con max-width per centrare gli elementi 
-          e distanziarli dai bordi proprio come nell'immagine originale 
-      */}
+    <header className="w-full bg-white border-b border-gray-200 shadow-sm relative z-50">
       <div className="max-w-[1200px] mx-auto flex items-center justify-between px-8 py-4">
         
-        {/* Logo Netflix - Leggermente più grande e distanziato */}
+        {/* Logo Netflix */}
         <div className="flex items-center">
           <Link href="/browse">
             <svg
@@ -24,26 +76,89 @@ const AccountNavbar = () => {
           </Link>
         </div>
 
-        {/* Sezione Destra: Icona Profilo */}
-        <div className="flex items-center">
-          <div className="flex items-center gap-1 border border-gray-300 rounded p-1 pr-2 hover:bg-gray-100 cursor-pointer transition-colors">
-            <div className="w-8 h-8 relative rounded overflow-hidden">
+        {/* Sezione Profilo e Menu */}
+        <div className="relative flex items-center" ref={dropdownRef}>
+          {/* Pulsante Trigger Avatar + Freccia */}
+          <button 
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center hover:opacity-80 transition-opacity focus:outline-none"
+            type="button"
+            aria-haspopup="true" 
+            aria-expanded={isOpen}
+          >
+            <div className="w-8 h-8 relative rounded overflow-hidden mr-2">
               <Image
-                src="https://occ-0-2582-2581.1.nflxso.net/dnm/api/v6/vN7bi_My87NPKvsBoib006Llxzg/AAAABXh10ggeTTdhZO1JIH_SNQ4gp0vsNnWfE8Mg2ckwzGvUzJMRpPFCujRK3Ex5K9VbkIyvUHQ92LBVdsemkj6zlpquL-qWMCNKeg.png?r=229"
-                alt="Avatar"
+                src={avatarSrc}
+                alt="Clicca per aprire il menu"
                 fill
                 className="object-cover"
                 unoptimized
               />
             </div>
-            <svg
-              viewBox="0 0 24 24"
-              className="w-5 h-5 text-gray-500"
+            {/* Freccia in stile caret */}
+            <svg 
+              viewBox="0 0 24 24" 
+              className={`w-[14px] h-[14px] text-gray-800 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} 
               fill="currentColor"
             >
-              <path d="M7 10l5 5 5-5z" />
+              <path fillRule="evenodd" d="M12 16a1 1 0 0 1-.707-.293l-6-6a1 1 0 0 1 1.414-1.414L12 13.586l5.293-5.293a1 1 0 0 1 1.414 1.414l-6 6A1 1 0 0 1 12 16z" clipRule="evenodd" />
             </svg>
-          </div>
+          </button>
+
+          {/* Menu a Tendina (posizionato direttamente sotto l'avatar) */}
+          {isOpen && (
+            <div className="absolute right-0 top-full mt-2 w-[280px] bg-white rounded shadow-[0_2px_12px_rgba(0,0,0,0.15)] border border-gray-200 py-2 z-50 flex flex-col">
+              
+              <Link href="/browse" className="flex items-center gap-4 px-5 py-3 hover:bg-gray-100 transition-colors text-black">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" className="text-gray-800 shrink-0">
+                  <path fill="currentColor" fillRule="evenodd" d="M6.414 11H21v2H6.414l5.293 5.293-1.414 1.414-7-7a1 1 0 0 1 0-1.414l7-7 1.414 1.414z" clipRule="evenodd" />
+                </svg>
+                <span className="text-[15px] font-bold">Torna su Netflix</span>
+              </Link>
+              
+              <hr className="bg-gray-200 border-none h-px my-1" />
+
+              <Link href="/account" className="flex items-center gap-4 px-5 py-3 hover:bg-gray-100 transition-colors text-black">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" className="text-gray-800 shrink-0">
+                  <path fill="currentColor" fillRule="evenodd" d="M15 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0m2 0A5 5 0 1 1 7 5a5 5 0 0 1 10 0M4 21a8 8 0 1 1 16 0v.514A68 68 0 0 1 12 22a68 68 0 0 1-8-.486zm17.15 2.378-.15-.99.151.99a1 1 0 0 0 .849-.99V21c0-5.523-4.477-10-10-10S2 15.477 2 21v1.389a1 1 0 0 0 .849.988L3 22.39c-.151.988-.15.988-.15.989h.003l.01.002.038.005.142.02q.186.027.535.072A70 70 0 0 0 12 24a70 70 0 0 0 8.422-.523q.35-.045.535-.072l.142-.02.038-.005.01-.002z" clipRule="evenodd" />
+                </svg>
+                <span className="text-[15px] font-bold">Account</span>
+              </Link>
+
+              <Link href="/account/profiles" className="flex items-center gap-4 px-5 py-3 hover:bg-gray-100 transition-colors text-black">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" className="text-gray-800 shrink-0">
+                  <path fill="currentColor" fillRule="evenodd" d="M19.121 1.707a3 3 0 0 0-4.242 0l-1.586 1.586-.707.707-11 11A2 2 0 0 0 1 16.414V21a2 2 0 0 0 2 2h4.586A2 2 0 0 0 9 22.414l11-11 .707-.707 1.586-1.586a3 3 0 0 0 0-4.242zM15.586 7 14 5.414l-11 11V19a2 2 0 0 1 2 2h2.586l11-11L17 8.414 6.707 18.707l-1.414-1.414zm.707-3.879a1 1 0 0 1 1.414 0l3.172 3.172a1 1 0 0 1 0 1.414L20 8.586 15.414 4z" clipRule="evenodd" />
+                </svg>
+                <span className="text-[15px] font-bold">Gestisci i profili</span>
+              </Link>
+
+              <a href="https://help.netflix.com/" target="_blank" rel="noreferrer noopener" className="flex items-center gap-4 px-5 py-3 hover:bg-gray-100 transition-colors text-black">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" className="text-gray-800 shrink-0">
+                  <path fill="currentColor" fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0m0 8c-1.317 0-2 .743-2 1.5H8C8 7.257 10.003 6 12 6s4 1.257 4 3.5c0 1.349-1.08 2.268-2.178 2.68-.265.1-.49.25-.636.411-.14.156-.186.292-.186.409v1h-2v-1c0-1.435 1.168-2.335 2.119-2.692.729-.274.881-.66.881-.808 0-.757-.683-1.5-2-1.5m1.5 8.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" clipRule="evenodd" />
+                </svg>
+                <span className="text-[15px] font-bold">Centro assistenza</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" className="ml-auto text-gray-500 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </a>
+
+              <hr className="bg-gray-200 border-none h-px my-1" />
+
+              <button onClick={handleSwitchProfile} className="flex items-center justify-between px-5 py-3 hover:bg-gray-100 transition-colors text-black w-full text-left">
+                <span className="text-[15px] font-bold">Cambia profilo</span>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" className="text-gray-500 shrink-0">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <button onClick={handleLogout} className="flex items-center px-5 py-3 hover:bg-gray-100 transition-colors text-black w-full text-left">
+                <span className="text-[15px] font-bold">Esci</span>
+              </button>
+              
+            </div>
+          )}
         </div>
       </div>
     </header>
