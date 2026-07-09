@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, Factory, Plus, Section, X } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import FaqSection from '@/components/hero/FAQSection';
 import Footer from '@/components/hero/Footer';
@@ -13,8 +13,8 @@ import { checkEmailExists } from '@/app/actions/auth';
 
 const SectionLayout = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
   return (
-    <section className={`py-5 px-[3rem] sm:px-[4rem] md:px-[10rem] lg:px-[22rem] ${className}`}>
-      <div className="mx-auto max-w-[120rem]">
+    <section className={`py-5 px-12 sm:px-16 md:px-40 lg:px-88 ${className}`}>
+      <div className="mx-auto max-w-480">
         {children}
       </div>
     </section>
@@ -53,7 +53,7 @@ export default function NetflixLanding() {
         <div className="bg-black text-white font-sans selection:bg-red-600">
         
             {/* --- HERO SECTION --- */}
-            <section className="relative h-[700px] lg:h-[800px] w-full border-b-8 border-[#232323]">
+            <section className="relative h-175 lg:h-200 w-full border-b-8 border-[#232323]">
                 {/* Background Image Overlay */}
                 <div className="absolute inset-0 z-0">
                 <Image 
@@ -63,7 +63,7 @@ export default function NetflixLanding() {
                     fill
                     priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-80" />
+                <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-black opacity-80" />
                 </div>
 
                 {/* Navbar */}
@@ -97,7 +97,7 @@ export default function NetflixLanding() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Indirizzo email"
-                    className="flex-grow p-4 bg-black/40 border border-gray-500 rounded text-white outline-none"
+                    className="grow p-4 bg-black/40 border border-gray-500 rounded text-white outline-none"
                     />
                     <button 
                       type="submit" 
