@@ -32,6 +32,10 @@ export async function getUserProfiles() {
   try {
     const utente = await getUtenteDaSessione();
     if (!utente) {
+      const cookieStore = await cookies();
+      if(cookieStore.get("session_token")) { 
+        cookieStore.delete("session_token");
+      }
       return { success: false, error: "Sessione non valida o scaduta" };
     }
 

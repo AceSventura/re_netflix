@@ -119,7 +119,7 @@ export default function ProfileSelection() {
         }
     };
 
-    const handleCreateProfile = async (e: React.FormEvent) => {
+    const handleCreateProfile = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         setActionError("");
 
