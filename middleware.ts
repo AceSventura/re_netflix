@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Route accessibili senza sessione attiva
-const PUBLIC_PATHS = ["/login", "/"];
-
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
@@ -17,34 +14,42 @@ export function middleware(request: NextRequest) {
         `Middleware - Path: ${pathname} | Auth: ${isLoggedIn} | Profile: ${hasActiveProfile}`
     );
 
-    // 1. Non loggato e prova ad accedere a una route protetta -> /login
-    if (!isLoggedIn && !PUBLIC_PATHS.includes(pathname)) {
+    // 1. Definizione delle rotte
+    const isProtectedRoute = pathname.startsWith("/browse") || pathname.startsWith("/watch");
+    const isPublicRoute = pathname === "/" || pathname === "/login" || pathname === "/register";
+
+    // 2. Utente NON autenticato che tenta l'accesso a route protette -> /login
+    if (!isLoggedIn && isProtectedRoute) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // 2. Loggato ma prova a tornare al login -> /browse
-    if (isLoggedIn && pathname === "/login") {
-        return NextResponse.redirect(new URL("/browse", request.url));
-    }
-
-    // 3. Root -> se loggato reindirizza a /browse. Se non loggato, consente la visualizzazione della pagina.
-    if (pathname === "/") {
-        if (isLoggedIn) {
+    // 3. Utente autenticato
+    if (isLoggedIn) {
+        // Impedisce di tornare su root, login o register
+        if (isPublicRoute) {
             return NextResponse.redirect(new URL("/browse", request.url));
         }
-        return NextResponse.next();
-    }
 
-    // 4. Loggato ma senza profilo attivo e prova ad accedere a contenuti
-    //    (tutto ciò che sta sotto /browse tranne la pagina di selezione stessa)
-    const isProfileSelectionPage = pathname === "/browse";
-    if (isLoggedIn && !hasActiveProfile && pathname.startsWith("/browse/") && !isProfileSelectionPage) {
-        return NextResponse.redirect(new URL("/browse", request.url));
+        // Se non ha un profilo attivo e tenta di accedere a contenuti specifici
+        // (es: /watch/123 o /browse/my-list), forziamo il reindirizzamento alla 
+        // pagina principale /browse dove avviene la selezione del profilo.
+        if (!hasActiveProfile && isProtectedRoute && pathname !== "/browse") {
+            return NextResponse.redirect(new URL("/browse", request.url));
+        }
     }
 
     return NextResponse.next();
 }
 
 export const config = {
-    matcher: ["/", "/login", "/browse/:path*"],
+    matcher: [
+        /*
+         * Applica il middleware a tutte le route tranne:
+         * - api (rotte API)
+         * - _next/static (file statici)
+         * - _next/image (ottimizzazione immagini)
+         * - favicon.ico, file multimediali e icone
+         */
+        '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    ],
 };

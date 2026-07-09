@@ -3,6 +3,7 @@
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 const adapter = new PrismaBetterSqlite3({ url: "file:./prisma/netflix.db" });
 const prisma = new PrismaClient({ adapter });
@@ -158,4 +159,10 @@ export async function getActiveProfile() {
     console.error("Errore getActiveProfile:", error);
     return { success: false, error: "Errore interno del server" };
   }
+}
+export async function switchProfile() {
+  const cookieStore = await cookies();
+  cookieStore.delete("active_profile_id");
+
+  redirect("/browse");
 }

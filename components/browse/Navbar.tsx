@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Bell, ChevronDown, Pencil, User, HelpCircle, X } from "lucide-react";
+import { Search, ChevronDown, Pencil, User, HelpCircle, X } from "lucide-react";
 
 import { logoutUser } from "@/app/actions/auth";
 import { setActiveProfile } from "@/app/actions/profiles";
