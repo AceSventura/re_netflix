@@ -57,7 +57,7 @@ export default function NetflixLanding() {
                 {/* Background Image Overlay */}
                 <div className="absolute inset-0 z-0">
                 <Image 
-                    src="https://assets.nflxext.com/ffe/siteui/vlv3/3d31dac6-aaf0-4e6e-8bd7-e16c5d9cd9a3/web/IT-it-20260119-TRIFECTA-perspective_4640c9a6-3de0-4277-97b5-1f61e77ed18e_large.jpg" 
+                    src="/login-background.png"
                     className="object-cover opacity-50"
                     alt="Netflix Background"
                     fill
