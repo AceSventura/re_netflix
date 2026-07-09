@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 
 // Definiamo l'interfaccia per le props delle azioni (i link nelle card)
+// L'uso del punto interrogativo indica al compilatore che 'description' e 'isNew' non sono obbligatori.
 interface MembershipActionProps {
   label: string;
   description?: string;
@@ -11,6 +12,7 @@ interface MembershipActionProps {
   isNew?: boolean;
 }
 
+// Dichiarazione del Function Component principale
 const Membership: React.FC = () => {
   return (
     <section className="flex-1 min-w-0">
@@ -21,9 +23,14 @@ const Membership: React.FC = () => {
       </div>
 
       <div className="flex flex-col gap-8 mt-4">
+
         {/* CARD 1: Dettagli piano con linea viola superiore */}
+        {/*POSIZIONAMENTO (CSS): L'aggiunta della classe 'relative' è essenziale qui. 
+            Crea un nuovo sistema di coordinate per i figli posizionati in modo assoluto. */}
         <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden relative">
-          {/* Linea di accento viola come da screenshot */}
+          
+          {/*POSIZIONAMENTO ASSOLUTO: 'absolute' ancora questo <div> ai bordi del genitore 'relative'. 
+              'top-0 left-0 right-0' lo fa espandere orizzontalmente per tutta la larghezza. */}
           <div className="absolute top-0 left-0 right-0 h-1[4px] bg-[#a338f1]" />
           
           <div className="p-6 pb-4">
@@ -34,7 +41,10 @@ const Membership: React.FC = () => {
           </div>
 
           <ul className="divide-y divide-gray-100 border-t border-gray-100">
+            {/* Omette le props opzionali (quelle con ?)*/}
             <MembershipAction label="Modifica piano" href="/account/change-plan" />
+
+            {/* Passa tutte le props. Passare 'isNew' senza un valore assegna implicitamente 'true' */}
             <MembershipAction 
               label="Acquista uno slot per utente extra" 
               description="Condividi Netflix con qualcuno che non abita con te."
@@ -82,6 +92,7 @@ const Membership: React.FC = () => {
 };
 
 // Componente per le righe d'azione tipizzato correttamente
+// ({ label, description, href, isNew }) estrae direttamente le variabili dall'oggetto props.
 const MembershipAction: React.FC<MembershipActionProps> = ({ 
   label, 
   description, 
@@ -98,12 +109,18 @@ const MembershipAction: React.FC<MembershipActionProps> = ({
           <span className="font-bold text-black text-[16px] leading-tight group-hover:underline">
             {label}
           </span>
+
+          {/*CONDITIONAL RENDERING (JSX): Operatore logico AND (&&). 
+              Se 'isNew' è true, React esegue e renderizza il blocco a destra. 
+              Se 'isNew' è false o undefined, React ignora semplicemente l'espressione.*/}
           {isNew && (
             <span className="bg-[#0071eb]/10 text-[#0071eb] text-[10px] px-2 py-0.5 rounded-sm font-bold uppercase tracking-wider border border-[#0071eb]/20">
               Nuovo
             </span>
           )}
         </div>
+
+        {/* Stesso concetto di Conditional Rendering per la descrizione */}
         {description && (
           <span className="text-gray-500 text-[13px] mt-1 leading-normal">
             {description}

@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
+
+// HOOK DI NAVIGAZIONE
 import { usePathname } from "next/navigation";
 
+// Dichiarazione del Function Component principale ed esportazione
 export default function Sidebar() {
+
+  // ESECUZIONE DELL'HOOK: 
+  // pathname conterrà una stringa con il percorso attuale.
+  // Ogni volta che l'utente naviga e l'URL cambia, questo hook forza un re-render del componente.
   const pathname = usePathname();
 
+  // Array statico di oggetti. Rende il menu scalabile. 
   const menuItems = [
     { label: "Panoramica", href: "/account" },
     { label: "Abbonamento", href: "/account/membership" },
@@ -15,7 +23,9 @@ export default function Sidebar() {
   ];
 
   return (
+    // HTML SEMANTICO: Uso del tag <nav> specifico per i blocchi di navigazione.
     <nav className="flex flex-col gap-6">
+
       {/* Bottone Indietro */}
       <Link href="/browse" className="flex items-center gap-2 text-sm text-gray-700 hover:underline transition-all">
         <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
@@ -27,13 +37,22 @@ export default function Sidebar() {
       {/* Lista Link */}
       <ul className="flex flex-col gap-1">
         {menuItems.map((item) => {
-          // Controlla se il link corrente è quello attivo
+          
+          // Verifica se l'URL attuale del browser combacia esattamente con l'href del link iterato.
+          // Restituisce un booleano (true/false) che verrà usato per il rendering condizionale delle classi.
           const isActive = pathname === item.href;
           
           return (
+            // Qui usiamo 'item.href' invece dell'indice. 
+            // Essendo gli URL per natura univoci all'interno di un menu, sono perfetti come chiavi.
             <li key={item.href}>
               <Link
                 href={item.href}
+
+                // TEMPLATE LITERALS PER CLASSI DINAMICHE:
+                // La sintassi {` stringa statica ${condizione ? 'se vero' : 'se falso'} `}
+                // permette di innescare l'UI attiva (sfondo bianco, testo nero grassetto) 
+                // solo per la voce di menu corrispondente alla pagina in cui si trova l'utente.
                 className={`flex items-center gap-3 py-3 px-4 text-[15px] transition-all rounded-md ${
                   isActive
                     ? "bg-white shadow-sm font-bold text-black"

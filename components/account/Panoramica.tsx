@@ -3,6 +3,8 @@
 import React from "react";
 import Link from "next/link";
 
+// TYPESCRIPT: Definizione del contratto delle proprietà (props).
+// Il punto interrogativo (?) definisce 'description' e 'isNew' come opzionali.
 interface QuickLinkProps {
   label: string;
   description?: string;
@@ -11,6 +13,7 @@ interface QuickLinkProps {
   isNew?: boolean;
 }
 
+// Dichiarazione del Function Component principale
 const Panoramica: React.FC = () => {
   // Array di avatar estratti dai tuoi file precedenti
   const profileAvatars = [
@@ -31,6 +34,10 @@ const Panoramica: React.FC = () => {
         {/* CARD 1: Dettagli abbonamento */}
         <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6">
+
+            {/* TAILWIND CSS - GRADIENTI:
+                'bg-linear-to-r' imposta la direzione del gradiente da sinistra (from) a destra (to).
+                Usa colori esadecimali arbitrari JIT (Just-In-Time) con la sintassi [...]. */}
             <div className="inline-block bg-linear-to-r from-[#3b49df] to-[#a338f1] text-white text-[12px] font-bold px-4 py-1 rounded-full mb-4 uppercase tracking-wide">
               Inizio abbonamento: gennaio 2026
             </div>
@@ -41,6 +48,7 @@ const Panoramica: React.FC = () => {
               <span className="text-[14px] text-black">chat•••@gmail.com</span>
             </div>
           </div>
+
           <Link href="/account/membership" className="flex justify-between items-center p-5 border-t border-gray-100 hover:bg-gray-50 group transition-colors">
             <span className="text-[16px] font-bold text-black group-hover:underline">Gestisci abbonamento</span>
             <ChevronRightIcon />
@@ -51,9 +59,13 @@ const Panoramica: React.FC = () => {
         <div>
           <p className="text-[14px] text-gray-600 mb-3 font-medium">Link rapidi</p>
           <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+
+            {/* divide-y gestisce in automatico il bordo orizzontale tra i <QuickLink> figli */}
             <ul className="divide-y divide-gray-100">
               <QuickLink label="Modifica piano" href="/ChangePlan" icon={<MyPlanIcon />} />
               <QuickLink label="Gestisci metodo di pagamento" href="/managepayment" icon={<CreditCardIcon />} />
+
+              {/* Scrivere 'isNew' equivale a scrivere 'isNew={true}'.*/}
               <QuickLink 
                 label="Acquista uno slot per utente extra" 
                 description="Condividi Netflix con qualcuno che non abita con te."
@@ -82,7 +94,15 @@ const Panoramica: React.FC = () => {
             <p className="text-[#737373] text-[14px]">4 profili</p>
           </div>
           <div className="flex items-center gap-4">
+
+            {/* -space-x-1: Utility Tailwind per sovrapporre parzialmente le immagini 
+                (margine orizzontale negativo tra i fratelli). Effetto visivo "a pila". */}
             <div className="flex -space-x-1">
+
+              {/* LIST RENDERING E KEY PROP:
+                  Mappatura dell'array profileAvatars. 
+                  Qui si usa 'key={i}' (l'indice) perché l'array è puramente 
+                  statico e non subisce operazioni di filtro o riordinamento. */}
               {profileAvatars.map((src, i) => (
                 <div key={i} className="w-8 h-8 rounded-sm overflow-hidden border border-white shadow-sm">
                   <img src={src} alt="avatar" className="w-full h-full object-cover" />
@@ -98,20 +118,28 @@ const Panoramica: React.FC = () => {
 };
 
 // Sotto-componente QuickLink
+// Riceve le proprietà tipizzate dall'interfaccia QuickLinkProps e le destruttura.
 const QuickLink: React.FC<QuickLinkProps> = ({ label, description, icon, href, isNew }) => (
   <li>
     <Link href={href} className="flex items-center justify-between p-5 hover:bg-gray-50 group transition-colors">
       <div className="flex items-center gap-4">
+
+        {/* shrink-0 evita che l'icona si rimpicciolisca se il testo della label va a capo */}
         <div className="text-gray-900 w-6 flex justify-center shrink-0">{icon}</div>
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="font-bold text-black text-[16px] leading-tight group-hover:underline">{label}</span>
+
+            {/* CONDITIONAL RENDERING (&&): 
+                Il badge "Nuovo" viene renderizzato nel DOM *solo* se isNew è valutato come true. */}
             {isNew && (
               <span className="bg-[#0071eb]/10 text-[#0071eb] text-[10px] px-2 py-0.5 rounded-sm font-bold border border-[#0071eb]/20 uppercase">
                 Nuovo
               </span>
             )}
           </div>
+
+          {/* Stessa logica per la descrizione. Se non fornita, il nodo 'span' non esiste. */}
           {description && <span className="text-gray-500 text-[13px] mt-1 leading-tight">{description}</span>}
         </div>
       </div>

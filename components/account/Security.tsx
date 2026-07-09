@@ -3,6 +3,11 @@
 import React from "react";
 import Link from "next/link";
 
+// TYPESCRIPT - INTERFACCIA ESTESA:
+// Oltre a 'label' e 'icon' (obbligatori), accetta 'value', 'subValue', 
+// 'error' e 'isNew' come opzionali. Questo permette a 'SecurityItem' 
+// di adattarsi a diversi contesti (es. mostrare un allarme o un badge) 
+// senza dover creare sottomoduli separati.
 interface SecurityItemProps {
   label: string;
   value?: string;
@@ -13,9 +18,12 @@ interface SecurityItemProps {
   isNew?: boolean;
 }
 
+// Dichiarazione del Function Component principale
 const Security: React.FC = () => {
   return (
     <section className="flex-1 min-w-0">
+
+      {/* Intestazione */}
       <div className="mb-2">
         <h1 className="text-[32px] font-bold text-black tracking-tight leading-tight">Sicurezza</h1>
         <p className="text-[14px] text-gray-600 mt-1 font-medium">Dettagli account</p>
@@ -24,12 +32,20 @@ const Security: React.FC = () => {
       <div className="flex flex-col gap-8 mt-4">
         {/* CARD 1: Dettagli account */}
         <div className="bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden">
+
+          {/* divide-y gestisce le righe orizzontali interne alla lista */}
           <ul className="divide-y divide-gray-100">
+
+            {/* UTILIZZO FLESSIBILE DELLE PROPS:
+                Qui il componente figlio viene invocato con prop diverse.
+                Il primo ha solo i campi base. */}
             <SecurityItem 
               label="Password" 
               icon={<LockIcon />} 
               href="/password" 
             />
+
+            {/* Il secondo usa la prop 'error' per innescare un alert rosso. */}
             <SecurityItem 
               label="Email" 
               subValue="chatalexalexchat@gmail.com" 
@@ -37,6 +53,8 @@ const Security: React.FC = () => {
               icon={<EmailIcon />} 
               href="#" 
             />
+
+            {/* Il terzo usa 'subValue' per mostrare un'informazione aggiuntiva testuale. */}
             <SecurityItem 
               label="Cellulare" 
               subValue="331 846 2704" 
@@ -91,21 +109,34 @@ const Security: React.FC = () => {
   );
 };
 
+// SOTTO-COMPONENTE DI RIGHE (DRY - Don't Repeat Yourself)
 const SecurityItem: React.FC<SecurityItemProps> = ({ label, subValue, icon, href, error, isNew }) => (
   <li>
     <Link href={href} className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors group">
       <div className="flex items-center gap-4">
+
+        {/* L'icona ha dimensione fissa (w-6) e shrink-0 per non essere schiacciata */}
         <div className="text-[#333] w-6 flex justify-center shrink-0">{icon}</div>
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="font-bold text-black text-[16px] leading-tight group-hover:underline">{label}</span>
+
+            {/* RENDERING CONDIZIONALE MULTIPLO:
+                React esamina queste espressioni in sequenza. Valuta il lato sinistro dell'&&. 
+                Se è falso (undefined), ignora il blocco senza errori. */}
+            {/* Blocco 1: Badge Nuovo */}
             {isNew && (
               <span className="bg-[#0071eb]/10 text-[#0071eb] text-[10px] px-2 py-0.5 rounded-sm font-bold uppercase tracking-wider border border-[#0071eb]/20">
                 Nuovo
               </span>
             )}
           </div>
+
+          {/* Blocco 2: Testo Descrittivo */}
           {subValue && <span className="text-[#737373] text-[14px] mt-0.5">{subValue}</span>}
+
+          {/* Blocco 3: Messaggio di Errore Critico 
+              Include un'icona inline SVG e formattazione d'allerta (rosso, sottolineato). */}
           {error && (
             <span className="text-[#d93025] text-[13px] mt-1 flex items-center gap-1 font-medium underline decoration-dotted">
               <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
@@ -116,6 +147,8 @@ const SecurityItem: React.FC<SecurityItemProps> = ({ label, subValue, icon, href
           )}
         </div>
       </div>
+
+      {/* Icona di navigazione fissa a destra (Chevron) */}
       <svg viewBox="0 0 16 16" width="16" height="16" className="text-gray-400 group-hover:text-black transition-colors">
         <path fill="currentColor" fillRule="evenodd" d="M10.437 8.002 4.97 2.532l1.06-1.06 6 6a.75.75 0 0 1 0 1.06l-6 5.999-1.06-1.06z" clipRule="evenodd" />
       </svg>
