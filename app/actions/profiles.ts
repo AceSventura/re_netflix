@@ -15,6 +15,7 @@ async function getUtenteDaSessione() {
   const token = cookieStore.get("session_token")?.value;
   if (!token) return null;
 
+  // Normalmente il token è una stringa. Si fa il cast per numero
   const idSessione = Number(token);
   if (isNaN(idSessione)) return null; // cookie manomesso/non numerico
 
@@ -57,6 +58,7 @@ export async function createNewProfile(nome: string, avatarUrl: string) {
       return { success: false, error: "Sessione non valida o scaduta" };
     }
 
+    // Normalizzazione della stringa nome
     if (!nome || !nome.trim()) {
       return { success: false, error: "Il nome del profilo è obbligatorio" };
     }
