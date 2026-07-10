@@ -1,5 +1,8 @@
+"use client";
+
 import React from 'react';
 
+// L'array è dichiarato fuori dal componente.
 const reasons = [
   {
     title: "Goditi Netflix sulla tua TV",
@@ -14,6 +17,8 @@ const reasons = [
   {
     title: "Scarica le tue serie da guardare offline",
     description: "Salva facilmente i tuoi preferiti così avrai sempre qualcosa da guardare.",
+    // React permette di salvare interi nodi JSX (come questo SVG) all'interno 
+    // di oggetti JavaScript standard, rendendo la mappatura successiva molto pulita.
     icon: (
         <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
             <g id="download-core-small">
@@ -47,26 +52,45 @@ const reasons = [
   }
 ];
 
+// Dichiarazione del Function Component principale
 const ReasonsToJoin = () => {
   return (
     <section>
       <h2 className="text-2xl md:text-3xl font-bold mb-6">Motivi in più per abbonarsi</h2>
       
+      {/* Questo è il cuore strutturale del componente.
+          - grid-cols-1: Su mobile, le card sono impilate in un'unica colonna verticale.
+          - md:grid-cols-2: Da 768px in su, diventano 2 colonne affiancate (layout 2x2).
+          - lg:grid-cols-4: Da 1024px in su, diventano 4 colonne orizzontali (layout 4x1).
+          - gap-4: Mantiene una spaziatura uniforme di 16px (4 * 4px) tra tutte le card. */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        {/* ITERAZIONE DEI DATI:
+            Uso di 'index' come key è corretto qui, essendo un array statico e immutabile. */}
         {reasons.map((reason, index) => (
           <div 
             key={index} 
+
+            // - bg-gradient-to-br: Crea un gradiente direzionale verso il "bottom-right" (basso a destra).
+            // - from-[#192133] to-[#210e17]: Definisce i colori esadecimali custom di partenza e fine del gradiente.
+            // - min-h-[260px]: Forza un'altezza minima per uniformare le card anche se i testi hanno lunghezze diverse.
+            // - flex flex-col justify-between: Spinge il testo in alto e l'icona in basso, riempiendo lo spazio.
             className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-[#192133] to-[#210e17] min-h-[260px] flex flex-col justify-between"
           >
             <div>
+              {/*React legge l'oggetto, estrae il valore associato alla chiave title e lo stampa a schermo.*/}
               <h3 className="text-xl font-bold mb-3">{reason.title}</h3>
               <p className="text-gray-400 text-sm md:text-base leading-relaxed">
+                 {/*React legge l'oggetto, estrae il valore associato alla chiave descripton e lo stampa a schermo.*/}
                 {reason.description}
               </p>
             </div>
             
+            {/* ALLINEAMENTO ICONA:
+               'justify-end' spinge l'icona tutta a destra all'interno del flex container orizzontale. */}
             <div className="flex justify-end mt-4">
-              {reason.icon}
+              {/*React legge l'oggetto, estrae il valore associato alla chiave icon e lo stampa a schermo. In questo caso, è un SVG inline.*/}
+              {reason.icon} 
             </div>
           </div>
         ))}

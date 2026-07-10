@@ -1,7 +1,9 @@
+//HOOKS REACT: Importazione degli strumenti base per la gestione dello stato e del DOM.
 import React, { useState } from 'react';
+// LIBRERIE ESTERNE
 import { Plus, X } from 'lucide-react';
 
-// Domande/risposte per faq
+// array con domande/risposte per faq
 const faqData = [
   {
     id: 1,
@@ -35,11 +37,16 @@ const faqData = [
   }
 ];
 
+// Dichiarazione del Function Component principale
 const FaqSection = () => {
+
+  // Conserviamo l'INDICE (un numero) della FAQ attualmente aperta.
   // Stato per gestire quale FAQ è aperta (-1 significa nessuna)
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const toggleFaq = (index: number) => {
+    // Se clicco sulla FAQ che è GIA' aperta (activeIndex === index), la chiudo impostando -1.
+    // Altrimenti, imposto il nuovo indice, che chiuderà automaticamente quella precedente
     setActiveIndex(activeIndex === index ? -1 : index);
   };
 
@@ -50,15 +57,25 @@ const FaqSection = () => {
       </h2>
 
       <div className="flex flex-col gap-2">
+
+        {/* ITERAZIONE (map) E KEY PROP: mappiamo i dati statici.
+            Usiamo `faq.id` come chiave univoca per il Virtual DOM. */}
         {faqData.map((faq, index) => (
           <div key={faq.id} className="w-full">
+
+            {/* Bottone Trigger */}
             <button
               onClick={() => toggleFaq(index)}
               className="flex justify-between items-center w-full p-6 bg-[#2d2d2d] hover:bg-[#414141] transition-colors duration-200 text-left"
             >
               <span className="text-xl lg:text-2xl font-medium select-none">
-                {faq.question}
+                {faq.question} {/*React legge l'oggetto, estrae il valore associato alla chiave question
+                                 e lo stampa a schermo come testo all'interno dello <span>.*/}
               </span>
+
+              {/* RENDERING CONDIZIONALE DELL'ICONA:
+                  Se questa specifica riga è quella attiva, mostra la X (chiudi).
+                  Altrimenti mostra il Plus (apri). */}
               <div className="transition-transform duration-300">
                 {activeIndex === index ? (
                   <X size={36} strokeWidth={1.5} />
@@ -68,7 +85,11 @@ const FaqSection = () => {
               </div>
             </button>
 
-            {/* Contenuto con animazione CSS pura per l'altezza */}
+            {/* Contenuto con animazione CSS pura per l'altezza
+             Qui si usa un hack moderno con CSS Grid:
+                - grid-rows-[0fr]: Nasconde il contenuto "schiacciando" la griglia a zero.
+                - grid-rows-[1fr]: Espande la griglia per accomodare l'altezza naturale del contenuto.
+                Questo permette a 'transition-all' di calcolare l'animazione in modo fluido. */}
             <div
               className={`grid transition-all duration-300 ease-in-out bg-[#2d2d2d] mt-[1px] ${
                 activeIndex === index 
@@ -76,8 +97,16 @@ const FaqSection = () => {
                   : 'grid-rows-[0fr] opacity-0 p-0 overflow-hidden'
               }`}
             >
+
+              {/* FORMATTAZIONE TESTO MULTILINEA:
+                  'whitespace-pre-line' è una classe Tailwind fondamentale qui.
+                  Ordina al browser di rispettare i caratteri di a capo (\n\n) presenti
+                  nelle stringhe di testo grezzo dell'array faqData, trasformandoli in
+                  effettivi ritorni a capo visivi nell'HTML. Senza di questa, il testo 
+                  sarebbe un unico blocco ininterrotto. */}
               <p className="text-xl lg:text-2xl overflow-hidden leading-relaxed whitespace-pre-line text-[#efefef]">
-                {faq.answer}
+                {faq.answer} {/*React legge l'oggetto, estrae il valore associato alla chiave answer
+                                e lo stampa a schermo come testo all'interno dello <span>.*/}
               </p>
             </div>
           </div>
