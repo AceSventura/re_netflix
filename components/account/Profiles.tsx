@@ -70,7 +70,7 @@ export default function Profiles() {
   const [loading, setLoading] = useState(true); // Gestisce lo scheletro visivo iniziale
   const [error, setError] = useState<string | null>(null);
 
-  // 7. DATA FETCHING CONCORRENTE (Domanda d'esame su Performance):
+  // 7. DATA FETCHING CONCORRENTE:
   useEffect(() => {
     async function loadData() {
       try {

@@ -59,7 +59,7 @@ export default function Sidebar() {
                     : "text-gray-500 hover:text-black hover:bg-gray-200/50"
                 }`}
               >
-                {item.label}
+                {item.label} {/*Mostra il testo della voce di menu */}
               </Link>
             </li>
           );
