@@ -59,7 +59,7 @@ const Footer = () => {
                 href={link.href} 
                 className="text-[13px] underline hover:text-black leading-none inline-block text-[#737373]"
               >
-                {link.label}
+                {link.label} {/* Mostra il testo della voce di menu */}
               </Link>
             </li>
           ))}

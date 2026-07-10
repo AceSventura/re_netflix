@@ -107,7 +107,7 @@ const MembershipAction: React.FC<MembershipActionProps> = ({
       <div className="flex flex-col">
         <div className="flex items-center gap-2">
           <span className="font-bold text-black text-[16px] leading-tight group-hover:underline">
-            {label}
+            {label} 
           </span>
 
           {/*CONDITIONAL RENDERING (JSX): Operatore logico AND (&&). 

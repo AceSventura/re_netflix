@@ -98,7 +98,7 @@ const Security: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottone Elimina Account (Stile identico allo screenshot) */}
+        {/* Bottone Elimina Account*/}
         <div className="mt-2 w-full">
           <button className="w-full bg-white border border-gray-300 text-[#e50914] py-3 font-semibold rounded hover:bg-gray-50 transition-colors text-[16px] shadow-sm">
             Elimina account
