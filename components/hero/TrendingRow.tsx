@@ -1,5 +1,5 @@
 "use client";
-
+//HOOKS REACT: Importazione degli strumenti base per la gestione dello stato e del DOM.
 import React, { useRef, useState, useEffect } from 'react';
 
 // Dati di esempio (Iterati dal JSON)
@@ -16,29 +16,50 @@ const trendingData = [
   { id: 10, title: "Io Sono La Fine Del Mondo", img: "https://occ-0-778-784.1.nflxso.net/dnm/api/v6/mAcAr9TxZIVbINe88xb3Teg5_OA/AAAABf59bLGImKS9btK0gd6vkbZFdY6vSUDgOnmjNWb_2_rT4yxzN2TIjo681DXFFG-eM3EvBnu2Bq9f9d2mNOJXJJQorvICqBghlxQ.jpg?r=184" },
 ];
 
+// Dichiarazione del Function Component principale
 const TrendingRow = () => {
+  // Uso degli hook
+  // A differenza di useState, useRef crea un riferimento mutabile a un nodo del DOM 
+  // che NON innesca un re-render quando cambia. Qui serve per agganciarsi al <div> 
+  // che contiene la lista dei film per poterne leggere e modificare lo scroll.
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [canScrollLeft, setCanScrollLeft] = useState(false); //scrollamento a sinistra inizializzato a false
+  const [canScrollRight, setCanScrollRight] = useState(true);  //scrollamento a destrainizializzato a true
 
   // Controlla la visibilità delle frecce in base alla posizione dello scroll
   const checkScroll = () => {
     if (scrollRef.current) {
+      // Destrutturazione delle proprietà del nodo DOM:
+      // scrollLeft: Pixel scrollati da sinistra.
+      // scrollWidth: Larghezza totale del contenuto (anche quello nascosto).
+      // clientWidth: Larghezza visibile del contenitore sullo schermo.
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      // Se ho scrollato più di 10px, posso tornare indietro.
       setCanScrollLeft(scrollLeft > 10);
+      // Se lo spazio scrollato + la finestra visibile è minore del totale, posso andare avanti.
       setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
     }
   };
 
+  // CICLO DI VITA E MEMORY LEAKS (useEffect):
   useEffect(() => {
+    // Esegue il controllo iniziale al montaggio.
     checkScroll();
+    // Aggiunge un listener globale per ricalcolare le frecce se l'utente 
+    // ridimensiona la finestra (es. ruota il telefono o allarga il browser).
     window.addEventListener('resize', checkScroll);
-    return () => window.removeEventListener('resize', checkScroll);
-  }, []);
 
+    // FUNZIONE DI CLEANUP 
+    // Quando il componente viene smontato (distrutto), rimuove il listener.
+    return () => window.removeEventListener('resize', checkScroll);
+  }, []); // Array vuoto = esegui solo al mount e all'unmount.
+
+  // SCROLL PROGRAMMATICO:
   const handleScroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
+      // Calcola di scorrere dell'80% della larghezza visibile corrente.
       const scrollAmount = direction === 'left' ? -scrollRef.current.clientWidth * 0.8 : scrollRef.current.clientWidth * 0.8;
+      // Metodo nativo del browser per scrollare fluidamente (behavior: 'smooth').
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
@@ -84,25 +105,32 @@ const TrendingRow = () => {
 
             {/* LISTA CONTENUTI */}
             <div 
-              ref={scrollRef}
-              onScroll={checkScroll}
+              ref={scrollRef} // Aggancia l'hook useRef a questo div
+              onScroll={checkScroll} // Ad ogni minimo scroll, verifica se nascondere/mostrare le frecce
+              // L'uso di 'scrollSnapType: x mandatory' delega al motore CSS del browser 
+              // l'effetto "calamita" (lo snap sulle card), evitando pesanti librerie JavaScript.
               className="relative overflow-x-scroll scrollbar-hide no-scrollbar scroll-smooth overflow-hidden" 
               style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
             >
               <ul className="flex flex-row gap-2 md:gap-4 list-none p-0 m-0 pb-12">
+              {/* ITERAZIONE DEI DATI: usando item.id come key*/}
               {trendingData.map((item) => (
                 <li 
                   key={item.id}
                   className="flex-shrink-0 relative group cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105 z-10 w-[38%] md:w-[24%] lg:w-[18.18%]"
+                  // scrollSnapAlign: 'start' indica al CSS dove fermare la calamita
                   style={{ scrollSnapAlign: 'start' }}
                 >
                   
-                  {/* RANKING NUMBER - DAVANTI AL POSTER (z-30) */}
+                  {/* RANKING NUMBER - DAVANTI AL POSTER (z-30)
+                      Il numero di classifica deve apparire METÀ FUORI e METÀ DENTRO l'immagine.
+                      Usa 'absolute' con coordinate negative (left-[-1%] bottom-[-1%]) e uno z-index 
+                      superiore (30) rispetto a quello del poster (20) per sovrapporsi. */}
                   <div className="absolute left-[-1%] bottom-[-1%] z-30 pointer-events-none leading-none">
                     <span 
                       className="text-[4rem] md:text-[5rem] lg:text-[8rem] font-black tracking-tighter text-black rank-number"
                     >
-                      {item.id}
+                      {item.id} {/*React legge l'oggetto, estrae il valore associato alla chiave id e lo stampa a schermo.*/}
                     </span>
                   </div>
 
@@ -125,7 +153,7 @@ const TrendingRow = () => {
       </div>
 
       <style jsx>{`
-        /* Stile ispezionato originale */
+        /* Stile CSS ispezionato originale */
         .bwo6la-btn {
           height: 7.5rem;
           width: 1.5rem;
