@@ -1,149 +1,122 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { MovieDTO, SeriesDTO, ProgressEntryDTO, FormattedMedia, FormattedProgress } from "@/types";
+// ============================================================================
+// COSTANTI DI FALLBACK
+// ============================================================================
+const DEFAULT_POSTER_H = "https://picsum.photos/640/360?random=1"; 
+const DEFAULT_POSTER_V = "https://picsum.photos/400/600?random=1"; 
+const DEFAULT_HERO = "https://picsum.photos/800/450?random=1";     
+const DEFAULT_THUMB = "https://picsum.photos/300/200?random=1";    
+// ============================================================================
+// FUNZIONI MODULARI (DTO Mappers)
+// ============================================================================
 
+function formatMovie(m: MovieDTO, posterFallback = DEFAULT_POSTER_H): FormattedMedia {
+    return {
+        id: m.id_contenuto.toString(),
+        title: m.titolo_contenuto,
+        poster: m.copertina_url || posterFallback,
+        vposter: m.vposter_url || DEFAULT_POSTER_V,
+        type: "film"
+    };
+}
+
+function formatSeries(s: SeriesDTO, posterFallback = DEFAULT_POSTER_H): FormattedMedia {
+    return {
+        id: s.id_serie_tv.toString(),
+        title: s.titolo_serie_tv,
+        poster: s.img_hero || posterFallback,
+        vposter: s.vposter_url || DEFAULT_POSTER_V,
+        type: "serie"
+    };
+}
+
+function formatProgressEntry(entry: ProgressEntryDTO): FormattedProgress {
+    const contenuti = entry.contenuti;
+    let resolvedId, resolvedType, resolvedTitle, resolvedPoster, resolvedVPoster;
+    
+    const isSeriesEpisode = contenuti.tipo !== "film" && contenuti.stagioni?.serie_tv;
+    const parentSeries = isSeriesEpisode ? contenuti.stagioni?.serie_tv : null;
+
+    if (isSeriesEpisode && parentSeries) {
+        resolvedType = "serie";
+        resolvedId = parentSeries.id_serie_tv.toString();
+        resolvedTitle = parentSeries.titolo_serie_tv || contenuti.titolo_contenuto;
+        resolvedPoster = parentSeries.img_hero || contenuti.copertina_url || DEFAULT_POSTER_H;
+        resolvedVPoster = parentSeries.vposter_url || contenuti.vposter_url || DEFAULT_POSTER_V;
+    } else {
+        resolvedType = "film";
+        resolvedId = contenuti.id_contenuto.toString();
+        resolvedTitle = contenuti.titolo_contenuto;
+        resolvedPoster = contenuti.copertina_url || DEFAULT_POSTER_H;
+        resolvedVPoster = contenuti.vposter_url || DEFAULT_POSTER_V;
+    }
+
+    return {
+        id: resolvedId,
+        title: resolvedTitle,
+        poster: resolvedPoster,
+        vposter: resolvedVPoster,
+        type: resolvedType,
+        resumeTime: entry.durata_visualizzata ?? 0,
+        progress: entry.stato_completamento ?? 0,
+    };
+}
+
+// ============================================================================
+// FUNZIONE PRINCIPALE: getBrowseData
+// ============================================================================
 export async function getBrowseData(profileId?: number) {
     try {
-        // 1. Estrazione catalogo generale
-        const serie = await prisma.serie_tv.findMany();
-        const film = await prisma.contenuti.findMany({
-            where: { tipo: "film" }
-        });
-        
-        // 2. Estrazione Top 10 (Ottimizzata tramite interazioni)
-        // Calcolo della top 10 delle Serie TV basata sul numero di valutazioni ricevute
-        const topSeries = await prisma.serie_tv.findMany({
-            take: 10,
-            orderBy: { valutazioni: { _count: 'desc' } }
-        });
-        
-        // Calcolo della top 10 dei Film basata sul numero effettivo di visualizzazioni (tabella 'guarda')
-        const topMovies = await prisma.contenuti.findMany({
-            where: { tipo: "film" },
-            take: 10,
-            orderBy: { guarda: { _count: 'desc' } }
-        });
+        // 1. Estrazione cataloghi generali e Top 10
+        const [serie, film, topSeries, topMovies] = await Promise.all([
+            prisma.serie_tv.findMany(),
+            prisma.contenuti.findMany({ where: { tipo: "film" } }),
+            prisma.serie_tv.findMany({ take: 10, orderBy: { valutazioni: { _count: 'desc' } } }),
+            prisma.contenuti.findMany({ where: { tipo: "film" }, take: 10, orderBy: { guarda: { _count: 'desc' } } })
+        ]);
 
-        // 3. Estrazione "La mia lista" e "Continua a guardare" per lo specifico profilo
-        let myList: Array<{ id: string; title: string; poster: string; vposter: string; type: string }> = [];
-        let continueWatching: Array<{ id: string; title: string; poster: string; vposter: string; type: string; resumeTime: number; progress: number }> = [];
+        let myList: Array<FormattedMedia> = [];
+        let continueWatching: Array<FormattedProgress> = [];
         
+        // 2. Elaborazione dati utente (se loggato con profilo)
         if (profileId) {
-            const savedMovies = await prisma.salva_film.findMany({
-                where: { id_profilo: profileId },
-                include: { contenuti: true }
-            });
-            
-            const savedSeries = await prisma.salva_serie.findMany({
-                where: { id_profilo: profileId },
-                include: { serie_tv: true }
-            });
-
-            const formattedSavedMovies = savedMovies.map(sm => ({
-                id: sm.contenuti.id_contenuto.toString(),
-                title: sm.contenuti.titolo_contenuto,
-                poster: sm.contenuti.copertina_url || "https://picsum.photos/640/360?random=3",
-                vposter: sm.contenuti.vposter_url || "https://picsum.photos/400/600?random=3",
-                type: "film"
-            }));
-
-            const formattedSavedSeries = savedSeries.map(ss => ({
-                id: ss.serie_tv.id_serie_tv.toString(),
-                title: ss.serie_tv.titolo_serie_tv,
-                poster: ss.serie_tv.img_hero || "https://picsum.photos/640/360?random=4",
-                vposter: ss.serie_tv.vposter_url || "https://picsum.photos/400/600?random=4",
-                type: "serie"
-            }));
-
-            myList = [...formattedSavedMovies, ...formattedSavedSeries];
-
-            // Recuperiamo i contenuti con un progresso salvato
-            const progressEntries = await prisma.guarda.findMany({
-                where: {
-                    id_profilo: profileId,
-                    durata_visualizzata: { gt: 5 },
-                },
-                include: {
-                    contenuti: {
-                        include: {
-                            stagioni: {
-                                include: { serie_tv: true },
-                            },
-                        },
-                    },
-                },
-            });
-
-            continueWatching = progressEntries
-                .filter((entry) => entry.contenuti)
-                .map((entry) => {
-                    const parentSeriesId = entry.contenuti.stagioni?.id_serie_tv;
-                    const isSeriesEpisode = entry.contenuti.tipo !== "film" && parentSeriesId !== null && parentSeriesId !== undefined;
-                    const resolvedId = isSeriesEpisode ? parentSeriesId.toString() : entry.contenuti.id_contenuto.toString();
-                    const resolvedType = isSeriesEpisode ? "serie" : "film";
-                    const resolvedTitle = isSeriesEpisode
-                        ? entry.contenuti.stagioni?.serie_tv?.titolo_serie_tv ?? entry.contenuti.titolo_contenuto
-                        : entry.contenuti.titolo_contenuto;
-                    const resolvedPoster = isSeriesEpisode
-                        ? entry.contenuti.stagioni?.serie_tv?.img_hero || entry.contenuti.copertina_url || "https://picsum.photos/640/360?random=7"
-                        : entry.contenuti.copertina_url || "https://picsum.photos/640/360?random=7";
-                    const resolvedVPoster = isSeriesEpisode
-                        ? entry.contenuti.stagioni?.serie_tv?.vposter_url || entry.contenuti.vposter_url || "https://picsum.photos/400/600?random=7"
-                        : entry.contenuti.vposter_url || "https://picsum.photos/400/600?random=7";
-
-                    return {
-                        id: resolvedId,
-                        title: resolvedTitle,
-                        poster: resolvedPoster,
-                        vposter: resolvedVPoster,
-                        type: resolvedType,
-                        resumeTime: entry.durata_visualizzata ?? 0,
-                        progress: entry.stato_completamento ?? 0, 
-                    };
+            const [savedMovies, savedSeries, progressEntries] = await Promise.all([
+                prisma.salva_film.findMany({ where: { id_profilo: profileId }, include: { contenuti: true } }),
+                prisma.salva_serie.findMany({ where: { id_profilo: profileId }, include: { serie_tv: true } }),
+                prisma.guarda.findMany({
+                    where: { id_profilo: profileId, durata_visualizzata: { gt: 5 } },
+                    include: { contenuti: { include: { stagioni: { include: { serie_tv: true } } } } }
                 })
-                .sort((a, b) => (b.resumeTime ?? 0) - (a.resumeTime ?? 0))
-                .slice(0, 10);
+            ]);
+
+            // Mappatura Modulare Lista
+            myList = [
+                ...savedMovies.map(sm => formatMovie(sm.contenuti as MovieDTO)),
+                ...savedSeries.map(ss => formatSeries(ss.serie_tv as SeriesDTO))
+            ];
+
+            // Mappatura Modulare Continua a Guardare
+            for (const entry of progressEntries) {
+                if (!entry.contenuti) continue; // Skip orfani
+                // Casting forzato da entry a ProgressEntryDTO per garantire la tipizzazione
+                continueWatching.push(formatProgressEntry(entry as unknown as ProgressEntryDTO));
+            }
+            
+            continueWatching.sort((a, b) => b.resumeTime - a.resumeTime);
+            continueWatching = continueWatching.slice(0, 10);
         }
 
-        const formattedSeries = serie.map(s => ({
-            id: s.id_serie_tv.toString(),
-            title: s.titolo_serie_tv,
-            poster: s.img_hero || "https://picsum.photos/640/360?random=1",
-            vposter: s.vposter_url || "https://picsum.photos/400/600?random=1",
-            type: "serie"
-        }));
-
-        const formattedMovies = film.map(f => ({
-            id: f.id_contenuto.toString(),
-            title: f.titolo_contenuto,
-            poster: f.copertina_url || "https://picsum.photos/640/360?random=2",
-            vposter: f.vposter_url || "https://picsum.photos/400/600?random=2",
-            type: "film"
-        }));
-
-        const formattedTopSeries = topSeries.map(s => ({
-            id: s.id_serie_tv.toString(),
-            title: s.titolo_serie_tv,
-            poster: s.img_hero || "https://picsum.photos/640/360?random=5",
-            vposter: s.vposter_url || "https://picsum.photos/400/600?random=5",
-            type: "serie"
-        }));
-
-        const formattedTopMovies = topMovies.map(f => ({
-            id: f.id_contenuto.toString(),
-            title: f.titolo_contenuto,
-            poster: f.copertina_url || "https://picsum.photos/640/360?random=6",
-            vposter: f.vposter_url || "https://picsum.photos/400/600?random=6",
-            type: "film"
-        }));
-
+        // 3. Formattazione DTO finali tramite mappers
         return { 
-            series: formattedSeries, 
-            movies: formattedMovies,
-            topSeries: formattedTopSeries,
-            topMovies: formattedTopMovies,
-            myList: myList,
-            continueWatching: continueWatching,
+            series: serie.map(s => formatSeries(s as SeriesDTO)), 
+            movies: film.map(m => formatMovie(m as MovieDTO)),
+            topSeries: topSeries.map(s => formatSeries(s as SeriesDTO)),
+            topMovies: topMovies.map(m => formatMovie(m as MovieDTO)),
+            myList,
+            continueWatching,
         };
 
     } catch (error) {
@@ -152,8 +125,11 @@ export async function getBrowseData(profileId?: number) {
     }
 }
 
+// ============================================================================
+// FUNZIONE: getMediaDetails
+// ============================================================================
 export async function getMediaDetails(id: string, type: string) {
-    const numericId = parseInt(id, 10);
+    const numericId = parseInt(id, 10); // 10 è la base di rappresentazione
     if (isNaN(numericId)) return null;
 
     try {
@@ -167,9 +143,6 @@ export async function getMediaDetails(id: string, type: string) {
             });
             
             if (!film) return null;
-            
-            const cast = film.partecipa.map(p => p.artisti.nome);
-            const genres = film.classificato_in.map(c => c.generi.nome_genere);
 
             return {
                 title: film.titolo_contenuto,
@@ -177,10 +150,10 @@ export async function getMediaDetails(id: string, type: string) {
                 year: film.anno_rilascio || 2026,
                 maturity: "T", 
                 duration: film.durata ? `${film.durata} min` : "N/D",
-                cast: cast,
-                genres: genres,
-                heroImage: film.copertina_url || "https://picsum.photos/800/450?random=1",
-                vposter: film.vposter_url || "https://picsum.photos/400/600?random=1",
+                cast: film.partecipa.map(p => p.artisti.nome),
+                genres: film.classificato_in.map(c => c.generi.nome_genere),
+                heroImage: film.copertina_url || DEFAULT_HERO,
+                vposter: film.vposter_url || DEFAULT_POSTER_V,
                 episodes: [] 
             };
         } 
@@ -202,11 +175,7 @@ export async function getMediaDetails(id: string, type: string) {
                 include: {
                     stagioni: {
                         orderBy: { numero_stagione: 'asc' },
-                        include: {
-                            contenuti: {
-                                orderBy: { id_contenuto: 'asc' }
-                            }
-                        }
+                        include: { contenuti: { orderBy: { id_contenuto: 'asc' } } }
                     }
                 }
             });
@@ -219,7 +188,7 @@ export async function getMediaDetails(id: string, type: string) {
                     title: ep.titolo_contenuto,
                     desc: ep.descrizione || "Nessuna descrizione disponibile.",
                     time: ep.durata ? `${ep.durata} min` : "N/D",
-                    image: ep.copertina_url || "https://picsum.photos/300/200?random=3",
+                    image: ep.copertina_url || DEFAULT_THUMB,
                     season: stagione.numero_stagione 
                 }))
             );
@@ -232,8 +201,8 @@ export async function getMediaDetails(id: string, type: string) {
                 duration: "Stagioni multiple",
                 cast: [], 
                 genres: [], 
-                heroImage: serie.img_hero || "https://picsum.photos/800/450?random=2",
-                vposter: serie.vposter_url || "https://picsum.photos/400/600?random=2",
+                heroImage: serie.img_hero || DEFAULT_HERO,
+                vposter: serie.vposter_url || DEFAULT_POSTER_V,
                 episodes: episodesList
             };
         }
@@ -245,25 +214,18 @@ export async function getMediaDetails(id: string, type: string) {
     }
 }
 
+// ============================================================================
+// ENDPOINT AUSILIARI
+// ============================================================================
+
 export async function getAllMovies() {
     try {
         const movies = await prisma.contenuti.findMany({
             where: { id_stagione: null },
-            select: {
-                id_contenuto: true,
-                titolo_contenuto: true,
-                copertina_url: true,
-                vposter_url: true,
-            }
+            select: { id_contenuto: true, titolo_contenuto: true, copertina_url: true, vposter_url: true }
         });
-
-        return movies.map(m => ({
-            id: m.id_contenuto.toString(),
-            title: m.titolo_contenuto,
-            poster: m.copertina_url || "https://picsum.photos/300/200?random=1",
-            vposter: m.vposter_url || "https://picsum.photos/400/600?random=1",
-            type: "film"
-        }));
+        
+        return movies.map(m => formatMovie(m as MovieDTO, DEFAULT_THUMB));
     } catch (error) {
         console.error("Errore recupero film:", error);
         return [];
@@ -273,21 +235,9 @@ export async function getAllMovies() {
 export async function getAllSeries() {
     try {
         const series = await prisma.serie_tv.findMany({
-            select: {
-                id_serie_tv: true,
-                titolo_serie_tv: true,
-                img_hero: true, 
-                vposter_url: true,
-            }
+            select: { id_serie_tv: true, titolo_serie_tv: true, img_hero: true, vposter_url: true }
         });
-
-        return series.map(s => ({
-            id: s.id_serie_tv.toString(),
-            title: s.titolo_serie_tv,
-            poster: s.img_hero || "https://picsum.photos/300/200?random=2",
-            vposter: s.vposter_url || "https://picsum.photos/400/600?random=2",
-            type: "serie" // Allineato con il resto del sistema (rimosso "serie_tv")
-        }));
+        return series.map(s => formatSeries(s as unknown as SeriesDTO, DEFAULT_THUMB));
     } catch (error) {
         console.error("Errore recupero serie tv:", error);
         return [];
@@ -295,33 +245,15 @@ export async function getAllSeries() {
 }
 
 export async function getMyListFromId(profileId?: number) {
-    const savedMovies = await prisma.salva_film.findMany({
-        where: { id_profilo: profileId },
-        include: { contenuti: true }
-    });
-    
-    const savedSeries = await prisma.salva_serie.findMany({
-        where: { id_profilo: profileId },
-        include: { serie_tv: true }
-    });
+    const [savedMovies, savedSeries] = await Promise.all([
+        prisma.salva_film.findMany({ where: { id_profilo: profileId }, include: { contenuti: true } }),
+        prisma.salva_serie.findMany({ where: { id_profilo: profileId }, include: { serie_tv: true } })
+    ]);
 
-    const formattedSavedMovies = savedMovies.map(sm => ({
-        id: sm.contenuti.id_contenuto.toString(),
-        title: sm.contenuti.titolo_contenuto,
-        poster: sm.contenuti.copertina_url || "https://picsum.photos/640/360?random=3",
-        vposter: sm.contenuti.vposter_url || "https://picsum.photos/400/600?random=3",
-        type: "film"
-    }));
-
-    const formattedSavedSeries = savedSeries.map(ss => ({
-        id: ss.serie_tv.id_serie_tv.toString(),
-        title: ss.serie_tv.titolo_serie_tv,
-        poster: ss.serie_tv.img_hero || "https://picsum.photos/640/360?random=4",
-        vposter: ss.serie_tv.vposter_url || "https://picsum.photos/400/600?random=4",
-        type: "serie"
-    }));
-
-    return [...formattedSavedMovies, ...formattedSavedSeries];
+    return [
+        ...savedMovies.map(sm => formatMovie(sm.contenuti as MovieDTO)),
+        ...savedSeries.map(ss => formatSeries(ss.serie_tv as SeriesDTO))
+    ];
 }
 
 export async function getNewAndPopularData() {
@@ -329,81 +261,20 @@ export async function getNewAndPopularData() {
         const currentYear = new Date().getFullYear();
 
         const [recentMovies, recentSeries, popularMovies, popularSeries] = await Promise.all([
-            // 1. Film recenti
-            prisma.contenuti.findMany({
-                where: { 
-                    tipo: "film",
-                    anno_rilascio: { gte: currentYear - 1 }
-                },
-                orderBy: { anno_rilascio: "desc" },
-                take: 10
-            }),
-            // 2. Serie recenti
-            prisma.serie_tv.findMany({
-                where: {
-                    anno_inizio: { gte: currentYear - 1 }
-                },
-                orderBy: { anno_inizio: "desc" },
-                take: 10
-            }),
-            // 3. Film popolari
-            prisma.contenuti.findMany({
-                where: { tipo: "film" },
-                orderBy: { guarda: { _count: "desc" } },
-                take: 10
-            }),
-            // 4. Serie popolari
-            prisma.serie_tv.findMany({
-                orderBy: { valutazioni: { _count: "desc" } },
-                take: 10
-            })
+            prisma.contenuti.findMany({ where: { tipo: "film", anno_rilascio: { gte: currentYear - 1 } }, orderBy: { anno_rilascio: "desc" }, take: 10 }),
+            prisma.serie_tv.findMany({ where: { anno_inizio: { gte: currentYear - 1 } }, orderBy: { anno_inizio: "desc" }, take: 10 }),
+            prisma.contenuti.findMany({ where: { tipo: "film" }, orderBy: { guarda: { _count: "desc" } }, take: 10 }),
+            prisma.serie_tv.findMany({ orderBy: { valutazioni: { _count: "desc" } }, take: 10 })
         ]);
-
-        const formattedRecentMovies = recentMovies.map(m => ({
-            id: m.id_contenuto.toString(),
-            title: m.titolo_contenuto,
-            poster: m.copertina_url || "https://picsum.photos/640/360?random=8",
-            vposter: m.vposter_url || "https://picsum.photos/400/600?random=8",
-            type: "film"
-        }));
-
-        const formattedRecentSeries = recentSeries.map(s => ({
-            id: s.id_serie_tv.toString(),
-            title: s.titolo_serie_tv,
-            poster: s.img_hero || "https://picsum.photos/640/360?random=9",
-            vposter: s.vposter_url || "https://picsum.photos/400/600?random=9",
-            type: "serie"
-        }));
-
-        const formattedPopularMovies = popularMovies.map(m => ({
-            id: m.id_contenuto.toString(),
-            title: m.titolo_contenuto,
-            poster: m.copertina_url || "https://picsum.photos/640/360?random=10",
-            vposter: m.vposter_url || "https://picsum.photos/400/600?random=10",
-            type: "film"
-        }));
-
-        const formattedPopularSeries = popularSeries.map(s => ({
-            id: s.id_serie_tv.toString(),
-            title: s.titolo_serie_tv,
-            poster: s.img_hero || "https://picsum.photos/640/360?random=11",
-            vposter: s.vposter_url || "https://picsum.photos/400/600?random=11",
-            type: "serie"
-        }));
 
         return {
             success: true,
-            newReleases: [...formattedRecentMovies, ...formattedRecentSeries],
-            popularNow: [...formattedPopularMovies, ...formattedPopularSeries]
+            newReleases: [...recentMovies.map(m => formatMovie(m as MovieDTO)), ...recentSeries.map(s => formatSeries(s as SeriesDTO))],
+            popularNow: [...popularMovies.map(m => formatMovie(m as MovieDTO)), ...popularSeries.map(s => formatSeries(s as SeriesDTO))]
         };
 
     } catch (error) {
         console.error("Errore nell'estrazione dei dati nuovi e popolari:", error);
-        return {
-            success: false,
-            newReleases: [],
-            popularNow: [],
-            error: "Errore durante il recupero dei contenuti."
-        };
+        return { success: false, newReleases: [], popularNow: [], error: "Errore durante il recupero dei contenuti." };
     }
 }

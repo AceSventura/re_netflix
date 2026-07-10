@@ -1,14 +1,13 @@
-// app/actions/search.ts
+"use server";
+
 import { prisma } from "@/lib/prisma";
+import { FormattedMedia } from "@/types";
 
-export interface SearchResult {
-    id: number;
-    tipo: string;
-    titolo: string | null;
-    poster: string | null;
-}
+// Variabili globali di fallback per mantenere la coerenza visiva
+const DEFAULT_POSTER_H = "https://picsum.photos/640/360?random=1";
+const DEFAULT_POSTER_V = "https://picsum.photos/400/600?random=1";
 
-export async function fetchSearchResults(query: string): Promise<SearchResult[]> {
+export async function fetchSearchResults(query: string): Promise<FormattedMedia[]> {
     if (!query) return [];
 
     // 1. Estrazione dati navigando la relazione tramite "stagioni"
@@ -16,13 +15,11 @@ export async function fetchSearchResults(query: string): Promise<SearchResult[]>
         where: {
             OR: [
                 {
-                    // Match sul titolo del film o episodio
                     titolo_contenuto: {
                         contains: query,
                     },
                 },
                 {
-                    // Match sul titolo della serie TV (navigando stagioni -> serie_tv)
                     stagioni: {
                         serie_tv: {
                             titolo_serie_tv: {
@@ -32,7 +29,6 @@ export async function fetchSearchResults(query: string): Promise<SearchResult[]>
                     },
                 },
                 {
-                    // Match sul nome dell'artista
                     partecipa: {
                         some: {
                             artisti: {
@@ -45,7 +41,6 @@ export async function fetchSearchResults(query: string): Promise<SearchResult[]>
                 },
             ],
         },
-        // Inclusione a cascata per recuperare i dati della serie madre
         include: {
             stagioni: {
                 include: {
@@ -55,31 +50,30 @@ export async function fetchSearchResults(query: string): Promise<SearchResult[]>
         },
     });
 
-    // 2. Normalizzazione e Deduplicazione
-    const normalizedResults: SearchResult[] = [];
+    // 2. Normalizzazione e Deduplicazione secondo il DTO unificato
+    const normalizedResults: FormattedMedia[] = [];
     const seenSeries = new Set<number>();
 
     for (const item of results) {
         if (item.tipo === "film") {
-            // Mappatura per i Film
             normalizedResults.push({
-                id: item.id_contenuto,
-                tipo: "film",
-                titolo: item.titolo_contenuto,
-                poster: item.copertina_url,
+                id: item.id_contenuto.toString(),
+                title: item.titolo_contenuto || "Titolo sconosciuto",
+                poster: item.copertina_url || DEFAULT_POSTER_H,
+                vposter: item.vposter_url || DEFAULT_POSTER_V,
+                type: "film",
             });
         } else if (item.stagioni?.serie_tv) {
-            // Mappatura per le Serie TV (partendo dall'episodio trovato)
             const idSerie = item.stagioni.serie_tv.id_serie_tv;
 
-            // Il Set evita di restituire la stessa serie più volte
             if (!seenSeries.has(idSerie)) {
                 seenSeries.add(idSerie);
                 normalizedResults.push({
-                    id: idSerie,
-                    tipo: "serie",
-                    titolo: item.stagioni.serie_tv.titolo_serie_tv,
-                    poster: item.stagioni.serie_tv.img_hero,
+                    id: idSerie.toString(),
+                    title: item.stagioni.serie_tv.titolo_serie_tv || "Titolo sconosciuto",
+                    poster: item.stagioni.serie_tv.img_hero || DEFAULT_POSTER_H,
+                    vposter: item.stagioni.serie_tv.vposter_url || DEFAULT_POSTER_V,
+                    type: "serie",
                 });
             }
         }
