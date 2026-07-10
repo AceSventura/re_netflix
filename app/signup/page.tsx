@@ -1,10 +1,14 @@
 "use client";
-
+// HOOKS REACT
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+// SERVER ACTION: Importazione della funzione backend. 
+// Verrà chiamata in modo asincrono quando l'utente invia i dati di registrazione.
 import { registerUser } from "@/app/actions/auth";
 
+// Array 'plans' fuori dal componente, si evita la riallocazione 
+// di questo array in memoria a ogni cambio di step (re-render) del form.
 const plans = [
   {
     id: "5200",
@@ -54,37 +58,45 @@ const plans = [
   }
 ];
 
+// Dichiarazione del Function Component principale ed esportazione
 export default function RegisterPage() {
+  // si usa un singolo stato per gestire quale "fase" del form è attualmente visibile.
   const [currentStep, setCurrentStep] = useState<"info" | "plans" | "accountSetup" | "regform" | "paymentSetup">("info");
-  
+  // STATI DEL FORM (Controlled Components):
   const [selectedPlanId, setSelectedPlanId] = useState("5200"); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [specialOffers, setSpecialOffers] = useState(false);
 
+  // FUNZIONI DI TRANSIZIONE STATO:
+  // Queste funzioni spostano l'utente da una fase all'altra dell'interfaccia.
   const handlePlanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentStep("accountSetup");
+    setCurrentStep("accountSetup"); // Avanza al setup account
   };
 
   const handleAccountSetupSubmit = () => {
-    setCurrentStep("regform");
+    setCurrentStep("regform"); // Avanza al form di registrazione
   };
 
+  //  GESTIONE SUBMIT FINALE E COMUNICAZIONE BACKEND:
   const handleRegistrationSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault();  // Blocca il ricaricamento del browser
     
     // Collegamento backend
+    // Costruzione nativa dell'oggetto FormData per l'invio sicuro dei dati
     const formData = new FormData();
     formData.append("email", email);
     formData.append("password", password);
 
+    // Chiamata alla Server Action
     const result = await registerUser(formData);
 
+    // Gestione della risposta
     if (result.success) {
-      setCurrentStep("paymentSetup");
+      setCurrentStep("paymentSetup"); // Successo: vai al pagamento
     } else {
-      alert(result.message || "Errore durante la registrazione.");
+      alert(result.message || "Errore durante la registrazione.");  // Fallimento: feedback utente
     }
   };
 
@@ -154,19 +166,27 @@ export default function RegisterPage() {
 
             <form onSubmit={handlePlanSubmit} className="flex flex-col">
               <div className="flex flex-col md:flex-row gap-3 mb-8">
+
+                {/* ITERAZIONE E CALCOLO STATO ATTIVO: */}
                 {plans.map((plan) => {
+                  // Calcola dinamicamente se la card corrente è quella selezionata
                   const isSelected = selectedPlanId === plan.id;
                   
                   return (
                     <label 
                       key={plan.id}
                       htmlFor={`select-${plan.id}`}
+                      // Assegna bordi e ombreggiature diverse in base allo stato 'isSelected'
                       className={`flex-1 relative border rounded-2xl flex flex-col cursor-pointer transition-all duration-200 overflow-hidden ${
                         isSelected 
                           ? "border-[#737373] shadow-md ring-1 ring-[#737373]" 
                           : "border-gray-300 hover:border-gray-400"
                       }`}
                     >
+                      {/* ACCESSIBILITÀ E LOGICA RADIO:
+                          L'input radio vero e proprio è reso invisibile ('sr-only') per 
+                          non rovinare il design, ma la sua logica (checked, onChange) 
+                          guida l'intero comportamento visivo della card. */}
                       <input 
                         type="radio" 
                         id={`select-${plan.id}`} 
@@ -177,14 +197,16 @@ export default function RegisterPage() {
                         className="sr-only" 
                       />
 
+                      {/* Header della card colorato dinamicamente con inline style ('bgStyle') */}
                       <div className="relative w-full p-3 pb-5 text-white" style={plan.bgStyle}>
                         <span data-uia="plan-name" className="block text-[19px] font-bold leading-tight">
-                          {plan.name}
+                          {plan.name} {/*Mostra il nome del piano*/}
                         </span>
                         <span className="block text-[14px] font-medium opacity-90 mt-0.5">
-                          {plan.subtitle}
+                          {plan.subtitle} {/*Mostra il sottotitolo del piano*/}
                         </span>
                         
+                        {/* Rendering condizionale della spunta di conferma (Mostrata solo se isSelected è true) */}
                         {isSelected && (
                           <div className="absolute bottom-3 right-3">
                             <svg width="20" height="18" viewBox="0 0 24 22" fill="none">
@@ -193,7 +215,8 @@ export default function RegisterPage() {
                           </div>
                         )}
                       </div>
-
+                      
+                      {/* Lista Features (Map annidato) */}
                       <div className="px-3 py-1 flex flex-col flex-grow bg-white">
                         {plan.features.map((feature, idx) => (
                           <div key={idx} className="py-2.5 border-b border-gray-100 last:border-0">
@@ -238,6 +261,7 @@ export default function RegisterPage() {
         {currentStep === "accountSetup" && (
           <div className="max-w-[440px] w-full flex flex-col items-center mt-8 mb-12">
             <div className="mb-6 flex justify-center w-full">
+              {/*logo dei dipsositivi*/}
               <svg viewBox="0 0 200 60" width="180" height="54" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g stroke="#e50914" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="5" y="25" width="44" height="28" rx="2" />
@@ -291,6 +315,7 @@ export default function RegisterPage() {
               <form onSubmit={handleRegistrationSubmit} className="flex flex-col w-full">
                 
                 <div className="relative w-full mb-4 bg-white rounded border border-[#2b9045] focus-within:ring-1 focus-within:ring-[#2b9045]">
+                  {/*campo email*/}
                   <input
                     type="email"
                     id="regEmail"
@@ -298,8 +323,14 @@ export default function RegisterPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     className="block px-4 pb-2 pt-6 w-full text-[16px] text-gray-900 bg-transparent appearance-none focus:outline-none focus:ring-0 peer"
-                    placeholder=" "
+                    placeholder=" "  // Cruciale per l'hack CSS del placeholder-shown
                   />
+
+                  {/*- L'input ha la classe 'peer'.
+                    - La label reagisce allo stato dell'input tramite selettori come:
+                    'peer-focus' (quando l'utente clicca) o 
+                    'peer-[:not(:placeholder-shown)]' (quando c'è del testo scritto).
+                    Questo anima la label verso l'alto senza toccare React/Stati. */}
                   <label
                     htmlFor="regEmail"
                     className="absolute text-[15px] font-medium text-gray-500 duration-200 transform -translate-y-3 scale-75 top-4 z-10 origin-[0] left-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-3 peer-[:not(:placeholder-shown)]:scale-75 peer-[:not(:placeholder-shown)]:-translate-y-3"
@@ -309,6 +340,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="relative w-full bg-white rounded border border-gray-400 focus-within:ring-1 focus-within:ring-blue-600 focus-within:border-blue-600">
+                  {/*campo password*/}
                   <input
                     type="password"
                     id="regPassword"
@@ -390,6 +422,7 @@ export default function RegisterPage() {
             {/* Bottoni - Più alti (py-5) e più tondeggianti (rounded-[6px]) */}
             <div className="flex flex-col gap-[8px]">
               
+              {/*primo bottone: Carta di credito o di debito*/}
               <button className="w-full flex items-center justify-between border border-gray-300 rounded-[6px] px-4 py-5 hover:bg-gray-50 transition-colors group">
                 <div className="flex items-center gap-[10px]">
                   <span className="text-[16px] text-[#333]">Carta di credito o di debito</span>
@@ -402,6 +435,7 @@ export default function RegisterPage() {
                 <svg className="w-6 h-6 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </button>
 
+              {/*secondo bottone: Portafoglio digitale*/}
               <button className="w-full flex items-center justify-between border border-gray-300 rounded-[6px] px-4 py-5 hover:bg-gray-50 transition-colors group">
                 <div className="flex items-center gap-[10px]">
                   <span className="text-[16px] text-[#333]">Portafoglio digitale</span>
@@ -409,7 +443,7 @@ export default function RegisterPage() {
                 </div>
                 <svg className="w-6 h-6 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </button>
-
+              {/*terzo bottone: PayPal*/}
               <button className="w-full flex items-center justify-between border border-gray-300 rounded-[6px] px-4 py-5 hover:bg-gray-50 transition-colors group">
                 <div className="flex items-center gap-[10px]">
                   <span className="text-[16px] text-[#333]">PayPal</span>
@@ -418,6 +452,7 @@ export default function RegisterPage() {
                 <svg className="w-6 h-6 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </button>
 
+              {/*quarto bottone: Codice regalo*/}
               <button className="w-full flex items-center justify-between border border-gray-300 rounded-[6px] px-4 py-5 hover:bg-gray-50 transition-colors group">
                 <div className="flex items-center gap-[10px]">
                   <span className="text-[16px] text-[#333]">Codice regalo</span>

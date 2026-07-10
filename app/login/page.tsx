@@ -1,79 +1,102 @@
 "use client";
 
+// HOOKS REACT
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+// HOOKS DI NAVIGAZIONE (App Router):
+// useRouter: Per le transizioni di pagina (router.push).
+// useSearchParams: Per leggere le query string dall'URL
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
+// Dichiarazione del Function Component principale ed esportazione
 export default function LoginPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const router = useRouter(); // Per la navigazione programmatica
+  const searchParams = useSearchParams(); // Per leggere i parametri della query string
 
+  // STATI COMPLESSI E MULTIPLI:
+  // Gestione step (macchina a stati semplificata).
   const [step, setStep] = useState<"identifier" | "otp">("identifier");
+
+  // Inizializzazione: prende l'email dall'URL se esiste, altrimenti stringa vuota.
   const [emailPhone, setEmailPhone] = useState(searchParams.get("email") || "");
+
+  // Array di stringhe per gestire i 4 quadrati del codice OTP in modo indipendente.
   const [otp, setOtp] = useState<string[]>(new Array(4).fill(""));
+
+  // Stato per la gestione dell'espansione del menu di aiuto
   const [helpExpanded, setHelpExpanded] = useState(false);
+
+  // Stato per la gestione dei messaggi di errore
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Stato per la gestione del caricamento (loading)
   const [isLoading, setIsLoading] = useState(false);
 
+  // Invece di puntare a un singolo <div>, qui useRef memorizza un array di input HTML.
+  // Servirà per spostare automaticamente il cursore (focus) da un quadratino all'altro.
   const inputRefs = useRef<HTMLInputElement[]>([]);
 
   // 1. Definiamo la funzione con useCallback PER PRIMA
+  // useCallback "congela" la funzione in memoria.
   const handleIdentifierSubmit = useCallback(async (e: React.FormEvent | null, emailToUse?: string) => {
-    if (e) e.preventDefault();
-    setErrorMessage("");
+    if (e) e.preventDefault();  // Impedisce il refresh solo se invocata da un form HTML
+    setErrorMessage("");  // Resetta il messaggio di errore prima di inviare la richiesta
 
-    const targetEmail = emailToUse || emailPhone;
+    const targetEmail = emailToUse || emailPhone; // Usa l'email passata come argomento o quella dallo stato
 
+    
     if (targetEmail.trim()) {
-      setIsLoading(true);
+      setIsLoading(true); // Imposta lo stato di caricamento a true prima della chiamata API
       try {
+        // Chiamata API standard verso le Route Handlers di Next.js
         const res = await fetch("/api/auth/send-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: targetEmail })
         });
         
-        const data = await res.json();
+        const data = await res.json(); // Parsing della risposta JSON
         
-        if (res.ok && data.success) {
-          setEmailPhone(targetEmail);
-          setStep("otp");
+        if (res.ok && data.success) {  // Se la risposta è OK e il backend conferma il successo
+          setEmailPhone(targetEmail); // Aggiorna lo stato con l'email valida
+          setStep("otp");  // Passa allo step successivo per l'inserimento del codice OTP
         } else {
-          setErrorMessage(data.error || "Si è verificato un errore.");
+          setErrorMessage(data.error || "Si è verificato un errore."); 
         }
       } catch (err) {
-        setErrorMessage("Errore di connessione al server.");
+        setErrorMessage("Errore di connessione al server."); 
       } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Reset dello stato di caricamento dopo la chiamata API
       }
     }
-  }, [emailPhone]); // Dipendenze
+  }, [emailPhone]); // useCallback si aggiorna solo se cambia emailPhone
 
   // 2. Usiamo useEffect DOPO la dichiarazione della funzione
   useEffect(() => {
-    const emailFromUrl = searchParams.get("email");
-    if (emailFromUrl) {
-      handleIdentifierSubmit(null, emailFromUrl);
+    const emailFromUrl = searchParams.get("email"); // Legge l'email dalla query string
+    if (emailFromUrl) { 
+      handleIdentifierSubmit(null, emailFromUrl); // Chiama la funzione di invio dell'email senza evento (null) e con l'email dalla query string
     }
-  }, [searchParams, handleIdentifierSubmit]);
+  }, [searchParams, handleIdentifierSubmit]); // useEffect si attiva quando cambia searchParams o handleIdentifierSubmit
 
   // --- STEP 2: Verifica Codice OTP al Backend ---
-  const verifyCode = async (completedOtp: string) => {
-    setErrorMessage("");
+  const verifyCode = async (completedOtp: string) => { // Funzione asincrona per verificare il codice OTP
+    setErrorMessage(""); 
     try {
-      const numericOtp = parseInt(completedOtp, 10);
+      const numericOtp = parseInt(completedOtp, 10); // Converte la stringa OTP in numero intero
 
-      const res = await fetch("/api/auth/verify-otp", {
+      // Chiamata API verso la Route Handler di Next.js per verificare il codice OTP
+      const res = await fetch("/api/auth/verify-otp", { 
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailPhone, otp: numericOtp })
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify({ email: emailPhone, otp: numericOtp }) 
       });
 
-      const data = await res.json();
+      const data = await res.json(); // Parsing della risposta JSON
       
-      if (res.ok && data.success) {
-        router.push("/browse");
+      if (res.ok && data.success) { 
+        router.push("/browse"); // Login completato, vai alla pagina di browse
       } else {
         setErrorMessage(data.error || "Codice non valido.");
       }
@@ -84,35 +107,39 @@ export default function LoginPage() {
   };
 
   // Gestione del cambio dei singoli quadrati OTP
-  const handleOtpChange = (element: HTMLInputElement, index: number) => {
+  const handleOtpChange = (element: HTMLInputElement, index: number) => { 
+    // Regex che forza l'utente a inserire solo numeri (rimuove lettere)
     const value = element.value.replace(/[^0-9]/g, ""); 
     if (!value) return;
 
-    const newOtp = [...otp];
-    newOtp[index] = value.substring(value.length - 1);
-    setOtp(newOtp);
+    const newOtp = [...otp]; // Crea una copia dell'array OTP per aggiornare lo stato
+    newOtp[index] = value.substring(value.length - 1); // Prende solo l'ultimo carattere inserito
+    setOtp(newOtp); // Aggiorna lo stato con il nuovo array OTP
 
+    // se non sono all'ultimo input, sposta il cursore al successivo
     if (index < 3 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1].focus();
     }
 
+    // Se sono all'ultimo quadratino, unisci i numeri e invia la richiesta
     if (index === 3) {
-      const finalOtp = newOtp.join("");
+      const finalOtp = newOtp.join(""); 
       if (finalOtp.length === 4) {
-        verifyCode(finalOtp);
+        verifyCode(finalOtp); // Chiama la funzione per verificare il codice OTP al backend
       }
     }
   };
 
   // Gestione del tasto Backspace/Cancella nell'OTP
   const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    // se premo Backspace, svuoto il quadrato e torno al precedente
     if (e.key === "Backspace") {
       const newOtp = [...otp];
-      newOtp[index] = "";
-      setOtp(newOtp);
+      newOtp[index] = ""; 
+      setOtp(newOtp); // Aggiorna lo stato con il nuovo array OTP svuotato
 
-      if (index > 0 && inputRefs.current[index - 1]) {
-        inputRefs.current[index - 1].focus();
+      if (index > 0 && inputRefs.current[index - 1]) { // Se non sono al primo input, sposta il cursore al precedente
+        inputRefs.current[index - 1].focus(); // Sposta il focus al quadrato precedente
       }
     }
   };
@@ -129,7 +156,6 @@ export default function LoginPage() {
       <header className="w-full relative z-10 border-b border-white/10 py-5 bg-black/20 backdrop-blur-[1px]">
         <div className="max-w-[1024px] mx-auto px-4 sm:px-8">
           <Link href="/">
-            {/* COMPONENTE IMAGE CORRETTO */}
             <Image
               src="https://occ.a.nflxso.net/dnmt/api/v6/iL4oJVDYZ8KLSrJ6eG2OwtghbfQ/AAAAAVBEN9I57czDc_uW4ZnDTNTb9hWvK70hYAqf0VNv_dsufIxZqfNclKrp7ugn5j0DkKCYy_4ncEpi6fJk1wpPuLO61r5YUWiEbVjxFpCESIWdJwAAOvAX.svg" 
               alt="NETFLIX" 
@@ -146,14 +172,17 @@ export default function LoginPage() {
       <main className="flex-grow flex justify-center items-center py-12 px-4 relative z-10">
         <div className="w-full max-w-[440px]">
           
-          {errorMessage && (
+          {/* Rendering Condizionale Errore */}
+          {errorMessage && (  
             <div className="bg-[#e87c03] text-white p-3 rounded mb-4 text-[14px]">
-              {errorMessage}
+              {errorMessage} {/* Mostra il messaggio di errore se esiste */}
             </div>
           )}
 
+          {/* Valuta lo stato 'step'. Se è "identifier", renderizza il primo blocco <>.
+              Altrimenti (:), renderizza la schermata dell'OTP. */}
           {step === "identifier" ? (
-            /* Schermata Inserisci i tuoi dati */
+            /* Schermata Inserisci i tuoi dati (email)*/
             <>
               <h1 className="text-[32px] font-bold tracking-tight text-white mb-2">
                 Inserisci i tuoi dati per accedere
@@ -168,7 +197,7 @@ export default function LoginPage() {
                     type="text"
                     id="userLoginId"
                     value={emailPhone}
-                    onChange={(e) => setEmailPhone(e.target.value)}
+                    onChange={(e) => setEmailPhone(e.target.value)} 
                     required
                     className="w-full bg-transparent px-4 pt-6 pb-2 text-[16px] text-white outline-none placeholder-transparent peer"
                     placeholder=" "
@@ -193,6 +222,7 @@ export default function LoginPage() {
               </form>
             </>
           ) : (
+
             /* Schermata Inserisci codice OTP */
             <>
               <h1 className="text-[32px] font-bold tracking-tight text-white mb-6 leading-tight">
@@ -201,29 +231,30 @@ export default function LoginPage() {
 
               <div className="w-full bg-[#333333]/90 rounded px-4 py-3.5 flex justify-between items-center mb-6">
                 <span className="text-[16px] text-white font-medium truncate mr-2">
-                  {emailPhone || "fabio0442@gmail.com"}
+                  {emailPhone || "fabio0442@gmail.com"} {/*Mostra l'email o il numero di telefono inserito in precedenza*/}
                 </span>
                 <button 
                   onClick={() => {
-                    setErrorMessage("");
-                    setStep("identifier");
+                    setErrorMessage(""); 
+                    setStep("identifier"); // Torna allo step precedente per modificare l'email
                   }}
                   className="text-white underline text-[14px] font-bold shrink-0 hover:text-gray-300 transition-colors"
                 >
                   Modifica
                 </button>
               </div>
-
+                
+              {/* Itera i 4 elementi vuoti dell'array 'otp'. */}
               <div className="flex gap-4 justify-start mb-5">
                 {otp.map((data, index) => (
                   <input
                     key={index}
                     type="text"
-                    maxLength={1}
+                    maxLength={1}  // L'utente non può digitare più di 1 carattere a livello HTML
                     value={data}
-                    ref={(el) => { if (el) inputRefs.current[index] = el; }}
-                    onChange={(e) => handleOtpChange(e.target, index)}
-                    onKeyDown={(e) => handleOtpKeyDown(e, index)}
+                    ref={(el) => { if (el) inputRefs.current[index] = el; }}  // Salva il riferimento dell'input nell'array di ref
+                    onChange={(e) => handleOtpChange(e.target, index)} // Gestisce il cambio di valore dell'input
+                    onKeyDown={(e) => handleOtpKeyDown(e, index)} // Gestisce il tasto Backspace
                     className="w-14 h-20 bg-[#161616]/90 border border-gray-600 rounded text-center text-2xl font-bold text-white outline-none focus:border-white transition-all"
                   />
                 ))}
@@ -247,7 +278,7 @@ export default function LoginPage() {
           {/* Chiedi Assistenza Dropdown */}
           <div className="mt-8">
             <button 
-              onClick={() => setHelpExpanded(!helpExpanded)}
+              onClick={() => setHelpExpanded(!helpExpanded)} 
               className="flex items-center gap-1 text-white hover:underline text-[14px] font-medium"
             >
               <span>Chiedi assistenza</span>
@@ -263,7 +294,8 @@ export default function LoginPage() {
               </svg>
             </button>
 
-            {helpExpanded && (
+            {/* se helpExpanded è true, mostra i link di aiuto */}
+            {helpExpanded && ( // 
               <div className="mt-4 flex flex-col gap-3 pl-1">
                 <Link href="/loginhelp" className="text-gray-400 underline text-[13px]">
                   Non ricordi l&apos;indirizzo email o il numero di cellulare?
