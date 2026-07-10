@@ -85,7 +85,8 @@ export default function MediaRow({ title, items, isTop10 = false, isContinueWatc
                             <Link 
                                 href={`?id=${item.id}&type=${item.type}`} 
                                 scroll={false} 
-                                key={item.id}
+                                // MODIFICA QUI: Generazione di una chiave composta univoca
+                                key={`${item.type}-${item.id}-${index}`}
                                 className={`relative shrink-0 cursor-pointer transition-transform duration-300 hover:scale-105 hover:z-30 group flex items-end ${
                                     isTop10 
                                     ? `${top10ContainerClass} h-45 md:h-55 justify-end` 
