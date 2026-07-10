@@ -21,9 +21,10 @@ export async function POST(request: NextRequest) {
 
     if (tipo === 'film') {
       if (azione === 'aggiungi') {
+        // Upsert permette di aggiungere un record se non esiste o aggiornare se esiste già
         await prisma.salva_film.upsert({
           where: { id_film_id_profilo: { id_film: idContenuto, id_profilo: idProfilo } },
-          update: {},
+          update: {},   // Funziona da create if not exists, perchè non aggiorna 
           create: { id_film: idContenuto, id_profilo: idProfilo },
         });
       } else if (azione === 'rimuovi') {
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const idProfiloStr = url.searchParams.get('idProfilo');
     const idContenutoStr = url.searchParams.get('idContenuto');
-    const tipo = url.searchParams.get('tipo');
+    const tipo = url.searchParams.get('tipo');    // tipo è il tipo di contenuto (film / serie)
 
     if (!idProfiloStr || !idContenutoStr || !tipo) {
       return NextResponse.json({ success: false, isFavorite: false }, { status: 400 });
