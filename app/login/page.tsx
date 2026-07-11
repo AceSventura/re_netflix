@@ -37,7 +37,7 @@ export default function LoginPage() {
   // Servirà per spostare automaticamente il cursore (focus) da un quadratino all'altro.
   const inputRefs = useRef<HTMLInputElement[]>([]);
 
-  // 1. Definiamo la funzione con useCallback PER PRIMA
+  // 1. Definiamo la funzione con useCallback 
   // useCallback "congela" la funzione in memoria.
   const handleIdentifierSubmit = useCallback(async (e: React.FormEvent | null, emailToUse?: string) => {
     if (e) e.preventDefault();  // Impedisce il refresh solo se invocata da un form HTML

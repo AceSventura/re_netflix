@@ -24,7 +24,7 @@ const TrendingRow = () => {
   // che contiene la lista dei film per poterne leggere e modificare lo scroll.
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false); //scrollamento a sinistra inizializzato a false
-  const [canScrollRight, setCanScrollRight] = useState(true);  //scrollamento a destrainizializzato a true
+  const [canScrollRight, setCanScrollRight] = useState(true);  //scrollamento a destra inizializzato a true
 
   // Controlla la visibilità delle frecce in base alla posizione dello scroll
   const checkScroll = () => {

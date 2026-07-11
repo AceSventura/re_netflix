@@ -35,13 +35,13 @@ export async function registerUser(formData: FormData) { // Riceve i dati del mo
   }
 }
 
-// funzione di logout
+// funzione di logout dell'utente
 export async function logoutUser() {
   try {
     const cookieStore = await cookies(); // Ottiene l'oggetto cookieStore per gestire i cookie
     const sessionToken = cookieStore.get("session_token")?.value; // Ottiene l'oggeto sessionToken per gestire i token di sessione
 
-    if (sessionToken) {
+    if (sessionToken) { 
       const sessionId = Number(sessionToken); 
       // Controllo di validità: previene errori sul DB se il cookie è stato 
       // manomesso nel browser con stringhe non numeriche.
@@ -69,7 +69,7 @@ export async function checkEmailExists(email: string) {
   if (!email) return false; // se non esiste
 
   try {
-    //PRISMA ORM - LETTURA (Read):
+    // QUERY AL DATABASE (Find): ricerca utente:
     const user = await prisma.utenti.findUnique({ 
       where: { email },
       // Usa 'select' per ordinare a SQL di restituire SOLO la colonna id_utente.

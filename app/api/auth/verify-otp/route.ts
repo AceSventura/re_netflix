@@ -12,8 +12,7 @@ const adapter = new PrismaBetterSqlite3({ url: "file:./prisma/netflix.db" });
 // crea l'oggetto prisma passandogli l'adapter appena creato
 const prisma = new PrismaClient({ adapter });
 
-// L'uso dell'interfaccia garantisce che il server non invii mai JSON 
-// con strutture impreviste, aiutando il frontend a tipizzare la risposta.
+// Definire un'interfaccia esplicita per la verifica dell'Otp
 interface VerifyOtpResponse {
   success: boolean;
   redirect?: string;
@@ -70,7 +69,7 @@ export async function POST(request: Request) {
 
     const cookieStore = await cookies(); // Ottiene l'oggetto cookieStore per gestire i cookie
     cookieStore.set("session_token", String(session.id_sessione), {
-      //httpOnly: Fondamentale. Impedisce al codice JavaScript del browserdi leggere il cookie.
+      //httpOnly: Fondamentale. Impedisce al codice JavaScript del browser di leggere il cookie.
       httpOnly: true,
       // secure: Se true, il cookie viaggia SOLO su connessioni HTTPS cifrate.
       // Dinamico: in sviluppo (localhost) è false, in produzione (Vercel) è true.

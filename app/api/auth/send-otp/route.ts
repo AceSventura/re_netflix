@@ -10,8 +10,7 @@ const adapter = new PrismaBetterSqlite3({ url: "file:./prisma/netflix.db" });
 // crea l'oggetto prisma passandogli l'adapter appena creato
 const prisma = new PrismaClient({ adapter });
 
-// Definire un'interfaccia esplicita per il payload di risposta impedisce 
-// al server di restituire dati non previsti o formattati male.
+// Definire un'interfaccia esplicita per il payload di risposta 
 interface OtpResponsePayload {
   success: boolean; 
   message: string;
@@ -55,7 +54,7 @@ export async function POST(request: Request) {
       data: { otpCode, otpExpiry }
     });
 
-    // Simulazione di un servizio di invio email (es. SendGrid, Resend, AWS SES)
+    // Simulazione di un servizio di invio email
     console.log(`[DEV EMAIL SIMULATOR] A: ${email} | Il tuo codice Netflix è: ${otpCode}`);
 
     // 9. COSTRUZIONE RISPOSTA TIPIZZATA:
@@ -66,7 +65,7 @@ export async function POST(request: Request) {
 
     // controlla se l'applicazione sta girando sul mio computer locale
     if (process.env.NODE_ENV === "development") {
-      //convert l'otp in una stringa e la aggancia all'oggetto respondePayload tramite alla proprietà devOtpCode
+      //convert l'otp in una stringa e la aggancia all'oggetto respondePayload tramite la proprietà devOtpCode
       responsePayload.devOtpCode = otpCode.toString(); 
     }
 

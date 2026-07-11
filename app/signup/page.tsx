@@ -71,7 +71,7 @@ export default function RegisterPage() {
   // FUNZIONI DI TRANSIZIONE STATO:
   // Queste funzioni spostano l'utente da una fase all'altra dell'interfaccia.
   const handlePlanSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Blocca il ricaricamento del browser
     setCurrentStep("accountSetup"); // Avanza al setup account
   };
 
