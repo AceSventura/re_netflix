@@ -10,20 +10,9 @@ import MediaRow from "@/components/browse/MediaRow";
 import Profiles from "@/components/browse/ProfileSelection";
 import MovieDetailModal from "@/components/browse/MovieDetailModal";
 import Footer from "@/components/browse/Footer";
+import { MediaItem } from "@/types";
 
 import { getBrowseData } from "@/app/actions/media";
-
-// 1. Estensione dell'interfaccia MediaItem per supportare la barra di progresso
-interface MediaItem {
-    id: string;
-    title: string;
-    description?: string;
-    poster: string;
-    vposter: string;
-    type: string;
-    progress?: number;
-    resumeTime?: number;
-}
 
 // 2. Estensione dell'interfaccia CarouselRow per il routing delle props al MediaRow
 interface CarouselRow {
