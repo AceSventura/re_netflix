@@ -97,6 +97,7 @@ model guarda {
   stato_completamento Int?
   id_contenuto        Int
   id_profilo          Int
+  aggiornato_il       DateTime  @default(now()) @updatedAt
   profili             profili   @relation(fields: [id_profilo], references: [id_profilo], onDelete: NoAction, onUpdate: NoAction)
   contenuti           contenuti @relation(fields: [id_contenuto], references: [id_contenuto], onDelete: NoAction, onUpdate: NoAction)
 

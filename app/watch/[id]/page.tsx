@@ -46,8 +46,8 @@ export default function WatchPage({ params }: PageProps) {
   const progressLastSavedRef = useRef<number | null>(null);
   
   const resolvedParams = use(params);
-  const targetId = resolvedParams.id;
-  const profileId = selectedProfile?.id_profilo;
+  const targetId = resolvedParams.id;   // id del contenuto da guardare, passato come parametro nell'URL
+  const profileId = selectedProfile?.id_profilo; // id del profilo selezionato, ottenuto dal contesto dei profili
 
   const [metadata, setMetadata] = useState<ContentMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);

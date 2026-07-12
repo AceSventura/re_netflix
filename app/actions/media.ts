@@ -88,24 +88,32 @@ export async function getBrowseData(profileId?: number) {
                 prisma.salva_serie.findMany({ where: { id_profilo: profileId }, include: { serie_tv: true } }),
                 prisma.guarda.findMany({
                     where: { id_profilo: profileId, durata_visualizzata: { gt: 5 } },
-                    include: { contenuti: { include: { stagioni: { include: { serie_tv: true } } } } }
+                    include: { contenuti: { include: { stagioni: { include: { serie_tv: true } } } } },
+                    orderBy: { aggiornato_il: 'desc' } // <-- più recenti prima
                 })
             ]);
 
-            // Mappatura Modulare Lista
             myList = [
                 ...savedMovies.map(sm => formatMovie(sm.contenuti as MovieDTO)),
                 ...savedSeries.map(ss => formatSeries(ss.serie_tv as SeriesDTO))
             ];
 
-            // Mappatura Modulare Continua a Guardare
+            // Deduplica: essendo già ordinati dal più recente al meno recente,
+            // la PRIMA occorrenza di ogni serie/film è quella cronologicamente più recente
+            const seenKeys = new Set<string>();
+
             for (const entry of progressEntries) {
                 if (!entry.contenuti) continue; // Skip orfani
-                // Casting forzato da entry a ProgressEntryDTO per garantire la tipizzazione
-                continueWatching.push(formatProgressEntry(entry as unknown as ProgressEntryDTO));
+
+                const formatted = formatProgressEntry(entry as unknown as ProgressEntryDTO);
+                const key = `${formatted.type}-${formatted.id}`;
+
+                if (seenKeys.has(key)) continue; // già presente un episodio più recente di questa serie
+                seenKeys.add(key);
+
+                continueWatching.push(formatted);
             }
-            
-            continueWatching.sort((a, b) => b.resumeTime - a.resumeTime);
+
             continueWatching = continueWatching.slice(0, 10);
         }
 
