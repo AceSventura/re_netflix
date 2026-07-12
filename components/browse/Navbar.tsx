@@ -46,6 +46,8 @@ export default function Navbar() {
 
     const [isScrolled, setIsScrolled] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [showBrowseMenu, setShowBrowseMenu] = useState(false);
+
     
     const searchInputRef = useRef<HTMLInputElement>(null);
     const debounceTimerRef = useRef<number | null>(null);
@@ -145,6 +147,7 @@ export default function Navbar() {
                     </svg>
                 </Link>
 
+                {/* Menu esteso: visibile solo da lg in su */}
                 <ul className="hidden lg:flex items-center gap-5 text-sm transition-colors">
                     {navLinks.map((link) => {
                         const isActive = pathname === link.href;
@@ -162,11 +165,55 @@ export default function Navbar() {
                         );
                     })}
                 </ul>
+
+                {/* Menu "Sfoglia": visibile solo sotto lg */}
+                <div
+                    className="relative lg:hidden"
+                    onMouseEnter={() => setShowBrowseMenu(true)}
+                    onMouseLeave={() => setShowBrowseMenu(false)}
+                >
+                    <button
+                        type="button"
+                        className="flex items-center gap-1 text-sm font-semibold text-white cursor-pointer"
+                    >
+                        Sfoglia
+                        <ChevronDown
+                            size={16}
+                            className={`transition-transform duration-300 ${showBrowseMenu ? "rotate-180" : ""}`}
+                        />
+                    </button>
+
+                    {showBrowseMenu && (
+                        <div className="absolute left-0 top-full pt-4 w-52 animate-in fade-in duration-200">
+                            <div className="absolute top-2 left-6 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-b-8 border-b-zinc-100/10" />
+
+                            <div className="bg-black/95 border border-zinc-800 text-white text-sm shadow-xl">
+                                <ul className="py-2">
+                                    {navLinks.map((link) => {
+                                        const isActive = pathname === link.href;
+                                        return (
+                                            <li key={link.href}>
+                                                <Link
+                                                    href={link.href}
+                                                    className={`block px-4 py-2.5 transition duration-200 hover:bg-zinc-800/60 ${
+                                                        isActive ? "font-bold text-white" : "font-normal text-[#E5E5E5]"
+                                                    }`}
+                                                >
+                                                    {link.name}
+                                                </Link>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* GRUPPO DESTRA */}
             <div className="flex items-center gap-5 text-white relative">
-                <div className="relative hidden md:flex items-center h-9">
+                <div className="relative items-center h-9">
                     {/* Contenitore Search */}
                     <div 
                         className={`flex items-center transition-all duration-300 ease-in-out ${

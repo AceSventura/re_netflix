@@ -8,7 +8,7 @@ interface MediaCardData {
     id: string;
     title: string;
     poster: string;
-    vposter?: string; // opzionale: serve solo per isTop10
+    vposter?: string;
     type: string;
     progress?: number;
     resumeTime?: number;
@@ -19,7 +19,8 @@ interface MediaCardProps {
     index: number;
     isTop10?: boolean;
     isContinueWatching?: boolean;
-    hrefBase?: string; // es. "/browse" - default: link relativo (comportamento attuale)
+    hrefBase?: string;
+    fluid?: boolean; // NUOVO: true = riempie il contenitore (per grid), false = larghezza fissa (per carosello)
 }
 
 function MediaCard({
@@ -28,21 +29,27 @@ function MediaCard({
     isTop10 = false,
     isContinueWatching = false,
     hrefBase = "",
+    fluid = false,
 }: MediaCardProps) {
     const top10ContainerClass =
         index === 9
             ? "w-[280px] md:w-[340px]"
             : "w-[190px] md:w-[240px]";
 
+    // Se fluid, la card riempie il genitore (grid gestisce lei le dimensioni)
+    const sizingClass = isTop10
+        ? `${top10ContainerClass} h-45 md:h-55 justify-end`
+        : fluid
+        ? "w-full aspect-video"
+        : "w-40 md:w-65 aspect-video";
+
+    const shrinkClass = fluid ? "" : "shrink-0";
+
     return (
         <Link
             href={`${hrefBase}?id=${item.id}&type=${item.type}`}
             scroll={false}
-            className={`relative shrink-0 cursor-pointer transition-transform duration-300 hover:scale-105 hover:z-30 group flex items-end ${
-                isTop10
-                    ? `${top10ContainerClass} h-45 md:h-55 justify-end`
-                    : "w-40 md:w-65 aspect-video"
-            }`}
+            className={`relative ${shrinkClass} cursor-pointer transition-transform duration-300 hover:scale-105 hover:z-30 group flex items-end ${sizingClass}`}
         >
             {isTop10 ? (
                 <>
@@ -67,7 +74,7 @@ function MediaCard({
                         alt={item.title}
                         fill
                         className="object-cover"
-                        sizes="(max-width: 768px) 160px, 260px"
+                        sizes={fluid ? "(max-width: 768px) 50vw, 16vw" : "(max-width: 768px) 160px, 260px"}
                     />
 
                     {isContinueWatching && item.progress !== undefined && (

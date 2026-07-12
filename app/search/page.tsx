@@ -36,6 +36,7 @@ export default async function SearchPage({
                                 item={item}
                                 index={index}
                                 hrefBase="/browse"
+                                fluid
                             />
                         ))}
                     </div>
