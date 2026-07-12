@@ -1,25 +1,14 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-interface MediaItem {
-    id: string;
-    title: string;
-    poster: string;
-    vposter: string;
-    type: string;
-    progress?: number; // <-- Aggiunto
-    resumeTime?: number; // <-- Aggiunto
-}
+import MediaCard, { type MediaCardData } from "./MediaCard";
 
 interface MediaRowProps {
     title: string;
-    items: MediaItem[];
+    items: MediaCardData[];
     isTop10?: boolean;
-    isContinueWatching?: boolean; // <-- Aggiunto
+    isContinueWatching?: boolean;
 }
 
 export default function MediaRow({ title, items, isTop10 = false, isContinueWatching = false }: MediaRowProps) {
@@ -49,7 +38,7 @@ export default function MediaRow({ title, items, isTop10 = false, isContinueWatc
         }
     };
 
-    if (items.length === 0) return null; // Evita di renderizzare righe vuote
+    if (items.length === 0) return null;
 
     return (
         <div className="space-y-4 group/row">
@@ -59,7 +48,7 @@ export default function MediaRow({ title, items, isTop10 = false, isContinueWatc
 
             <div className="relative">
                 {canScrollLeft && (
-                    <button 
+                    <button
                         onClick={() => scroll("left")}
                         className="absolute left-0 top-0 bottom-0 z-40 w-12 bg-transparent opacity-0 group-hover/row:opacity-100 transition-opacity flex items-center justify-center text-white drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
                     >
@@ -67,7 +56,7 @@ export default function MediaRow({ title, items, isTop10 = false, isContinueWatc
                     </button>
                 )}
 
-                <div 
+                <div
                     ref={rowRef}
                     onScroll={checkScrollPosition}
                     className={`flex gap-2 md:gap-4 overflow-x-auto overflow-y-hidden scroll-smooth px-4 md:px-12 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
@@ -77,68 +66,20 @@ export default function MediaRow({ title, items, isTop10 = false, isContinueWatc
                     {items.map((item, index) => {
                         if (isTop10 && index >= 10) return null;
 
-                        const top10ContainerClass = index === 9 
-                            ? "w-[280px] md:w-[340px]" 
-                            : "w-[190px] md:w-[240px]";
-
                         return (
-                            <Link 
-                                href={`?id=${item.id}&type=${item.type}`} 
-                                scroll={false} 
-                                // MODIFICA QUI: Generazione di una chiave composta univoca
+                            <MediaCard
                                 key={`${item.type}-${item.id}-${index}`}
-                                className={`relative shrink-0 cursor-pointer transition-transform duration-300 hover:scale-105 hover:z-30 group flex items-end ${
-                                    isTop10 
-                                    ? `${top10ContainerClass} h-45 md:h-55 justify-end` 
-                                    : "w-40 md:w-65 aspect-video"
-                                }`}
-                            >
-                                {isTop10 && (
-                                    <>
-                                        <div className="absolute -left-5 md:-left-7.5 -bottom-3.75 md:-bottom-6.25 text-[200px] md:text-[260px] font-black text-black [-webkit-text-stroke:4px_#595959] leading-none z-0 tracking-[-0.08em] select-none pointer-events-none">
-                                            {index + 1}
-                                        </div>
-                                        
-                                        <div className="relative w-30 md:w-35 h-full z-10 rounded-md overflow-hidden shadow-2xl">
-                                            <Image
-                                                src={item.vposter}
-                                                alt={item.title}
-                                                fill
-                                                className="object-cover"
-                                                sizes="(max-width: 768px) 120px, 140px"
-                                            />
-                                        </div>
-                                    </>
-                                )}
-
-                                {!isTop10 && (
-                                    <div className="relative w-full h-full rounded-md overflow-hidden bg-zinc-800">
-                                        <Image
-                                            src={item.poster}
-                                            alt={item.title}
-                                            fill
-                                            className="object-cover"
-                                            sizes="(max-width: 768px) 160px, 260px"
-                                        />
-                                        
-                                        {/* Rendering Barra di avanzamento */}
-                                        {isContinueWatching && item.progress !== undefined && (
-                                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-600/80">
-                                                <div 
-                                                    className="h-full bg-[#E50914]" 
-                                                    style={{ width: `${Math.min(Math.max(item.progress, 0), 100)}%` }} 
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </Link>
+                                item={item}
+                                index={index}
+                                isTop10={isTop10}
+                                isContinueWatching={isContinueWatching}
+                            />
                         );
                     })}
                 </div>
 
                 {canScrollRight && (
-                    <button 
+                    <button
                         onClick={() => scroll("right")}
                         className="absolute right-0 top-0 bottom-0 z-40 w-12 bg-transparent opacity-0 group-hover/row:opacity-100 transition-opacity flex items-center justify-center text-white drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]"
                     >

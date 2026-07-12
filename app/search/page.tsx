@@ -1,7 +1,8 @@
-import { fetchSearchResults, type SearchResult } from "@/app/actions/search";
+import { fetchSearchResults } from "@/app/actions/search";
+import { FormattedMedia } from "@/types";
 import Navbar from "@/components/browse/Navbar";
-import Image from "next/image";
-import Link from "next/link";
+import MediaCard from "@/components/browse/MediaCard";
+
 export default async function SearchPage({
     searchParams,
 }: {
@@ -9,13 +10,13 @@ export default async function SearchPage({
 }) {
     const resolvedSearchParams = await searchParams;
     const query = resolvedSearchParams.q || "";
-    
-    const results: SearchResult[] = await fetchSearchResults(query);
+
+    const results: FormattedMedia[] = await fetchSearchResults(query);
 
     return (
         <div>
-            <Navbar/>
-          
+            <Navbar />
+
             <main className="min-h-screen bg-[#141414] pt-24 px-4 md:px-12 text-white">
                 <div className="mb-6">
                     <h1 className="text-2xl font-semibold text-zinc-400">
@@ -29,24 +30,13 @@ export default async function SearchPage({
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        {results.map((item) => (
-                            <Link 
-                                // RISOLUZIONE BUG: Chiave composita univoca
-                                key={`${item.tipo}-${item.id}`} 
-                                href={`/browse?id=${item.id}&type=${item.tipo}`}
-                                className="relative aspect-video bg-zinc-800 rounded-md overflow-hidden hover:scale-105 transition duration-300 cursor-pointer group"
-                            >
-                                <Image
-                                    src={item.poster || "/placeholder.jpg"} 
-                                    alt={item.titolo || "Titolo assente"}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2">
-                                    <span className="text-sm font-medium">{item.titolo}</span>
-                                </div>
-                            </Link>
+                        {results.map((item, index) => (
+                            <MediaCard
+                                key={`${item.type}-${item.id}`}
+                                item={item}
+                                index={index}
+                                hrefBase="/browse"
+                            />
                         ))}
                     </div>
                 )}
