@@ -41,8 +41,8 @@ export async function logoutUser() {
     const cookieStore = await cookies(); // Ottiene l'oggetto cookieStore per gestire i cookie
     const sessionToken = cookieStore.get("session_token")?.value; // Ottiene l'oggeto sessionToken per gestire i token di sessione
 
-    if (sessionToken) { 
-      const sessionId = Number(sessionToken); 
+    if (sessionToken) { // se esiste
+      const sessionId = Number(sessionToken); //converte la stringa di testo estratta dal cookie in un formato numerico.
       // Controllo di validità: previene errori sul DB se il cookie è stato 
       // manomesso nel browser con stringhe non numeriche.
       if (!Number.isNaN(sessionId)) { 
@@ -64,7 +64,7 @@ export async function logoutUser() {
   }
 }
 
-// funzione per verificare l'easistenza della mail
+// funzione per verificare l'esistenza della mail
 export async function checkEmailExists(email: string) {
   if (!email) return false; // se non esiste
 
