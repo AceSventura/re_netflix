@@ -44,3 +44,14 @@ export interface FormattedProgress extends FormattedMedia {
     resumeTime: number;
     progress: number;
 }
+
+export interface MediaItem {
+    id: string;
+    title: string;
+    description?: string;
+    poster: string;
+    vposter?: string;   // opzionale, il fallback in MediaCard lo gestisce
+    type: string;
+    progress?: number;
+    resumeTime?: number;
+}

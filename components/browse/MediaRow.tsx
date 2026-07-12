@@ -2,11 +2,12 @@
 
 import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import MediaCard, { type MediaCardData } from "./MediaCard";
+import MediaCard from "./MediaCard";
+import { MediaItem } from "@/types";
 
 interface MediaRowProps {
     title: string;
-    items: MediaCardData[];
+    items: MediaItem[];
     isTop10?: boolean;
     isContinueWatching?: boolean;
 }

@@ -3,19 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { memo } from "react";
-
-interface MediaCardData {
-    id: string;
-    title: string;
-    poster: string;
-    vposter?: string;
-    type: string;
-    progress?: number;
-    resumeTime?: number;
-}
+import { MediaItem } from "@/types";
 
 interface MediaCardProps {
-    item: MediaCardData;
+    item: MediaItem;
     index: number;
     isTop10?: boolean;
     isContinueWatching?: boolean;
@@ -92,4 +83,3 @@ function MediaCard({
 }
 
 export default memo(MediaCard);
-export type { MediaCardData };
