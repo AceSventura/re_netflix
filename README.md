@@ -28,3 +28,15 @@ Seguire in sequenza i passaggi sottostanti per inizializzare l'ambiente di svilu
 Dalla directory radice del progetto, installa i pacchetti necessari definiti nel file `package.json`:
 ```bash
 npm install
+```
+**2. Configurazione del database**
+Il progetto utilizza **Prisma ORM** per la gestione del database SQLite.
+```bash
+npx prisma generate
+npx prisma db push
+```
+
+**3. Avvio del server di sviluppo**
+```bash
+npm run dev
+```
