@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, use, useCallback } from 'react';
 import Image from 'next/image';
 import {
-  ArrowLeft, RotateCcw, RotateCw, Play, Pause, SkipForward, Volume2, VolumeX, Maximize, MessageSquare, Copy
+  ArrowLeft, RotateCcw, RotateCw, Play, Pause, SkipForward, Volume2, VolumeX, Maximize, MessageSquare, Copy, Check
 } from 'lucide-react';
 import { useRouter } from 'next/navigation'; 
 import Hls from 'hls.js';
@@ -15,21 +15,26 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-type ContentMetadata = {
+// Allineato alla forma REALE restituita da getMediaDetails (vedi app/actions/media.ts).
+// Nota: l'API non fornisce `isCurrent`, `episodeNumber` né `seasonNumber` — questi
+// vengono derivati lato client qui sotto, confrontando ep.id con l'id della pagina
+// corrente e calcolando la posizione all'interno della stagione filtrata.
+type EpisodeApiShape = {
   id: string;
-  titolo: string;
-  descrizione?: string;
+  title: string;
+  desc: string;
+  time: string;
+  image?: string;
+  season: number;
+};
+
+type ContentMetadata = {
+  title: string;
+  description?: string;
+  heroImage?: string;
   tipo: 'film' | 'serie_tv';
   titoloSerie?: string;
-  episodi?: {
-    id: string;
-    title: string;
-    description: string;
-    episodeNumber: number;
-    seasonNumber: number;
-    isCurrent: boolean;
-    image?: string;
-  }[];
+  episodi?: EpisodeApiShape[];
 };
 
 interface MediaTrack {
@@ -67,6 +72,23 @@ export default function WatchPage({ params }: PageProps) {
   // --- STATI: CONTROLLI SECONDARI ---
   const [showEpisodes, setShowEpisodes] = useState(false);
   const [showAudioSub, setShowAudioSub] = useState(false);
+  // Vista attiva dentro la sidebar episodi: elenco episodi, oppure elenco stagioni
+  // (schermo intero, stile Netflix) raggiunto cliccando sull'intestazione "Stagione N".
+  const [sidebarView, setSidebarView] = useState<'episodes' | 'seasons'>('episodes');
+  // Stagione mostrata nella sidebar episodi (indipendente dalla stagione dell'episodio in riproduzione).
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+
+  // --- TRACCIAMENTO ID PER RESET DELLO STATO ---
+  const [prevTargetId, setPrevTargetId] = useState(targetId);
+
+  // --- RESET DI STATO QUANDO CAMBIA L'EPISODIO ---
+  // Pattern React per aggiornare lo stato durante il render senza ricorrere a useEffect,
+  // evitando re-render a cascata e avvisi sulle prestazioni.
+  if (targetId !== prevTargetId) {
+    setPrevTargetId(targetId);
+    setSelectedSeason(null);
+    setSidebarView('episodes');
+  }
   
   const [audioTracks, setAudioTracks] = useState<MediaTrack[]>([]);
   const [subtitleTracks, setSubtitleTracks] = useState<MediaTrack[]>([]);
@@ -74,19 +96,44 @@ export default function WatchPage({ params }: PageProps) {
   const [currentSubtitle, setCurrentSubtitle] = useState<number>(-1);
   const [resumeTime, setResumeTime] = useState<number | null>(null);
 
-  // Calcolo derivato per la navigazione degli episodi
-  const currentEp = metadata?.tipo === 'serie_tv' ? metadata.episodi?.find(ep => ep.isCurrent) : null;
-  const currentEpIndex = metadata?.episodi?.findIndex(ep => ep.isCurrent) ?? -1;
-  const nextEpisode = (currentEpIndex !== -1 && metadata?.episodi) ? metadata.episodi[currentEpIndex + 1] : null;
+  // --- CALCOLI DERIVATI: STAGIONI ED EPISODI ---
+  // L'episodio "corrente" è determinato confrontando l'id con targetId (l'unica fonte
+  // affidabile, dato che l'API non restituisce un flag isCurrent).
+  const allEpisodes = metadata?.episodi ?? [];
+  const currentEp = allEpisodes.find(ep => ep.id === targetId) ?? null;
+  const currentEpIndexGlobal = allEpisodes.findIndex(ep => ep.id === targetId);
+  const nextEpisode = currentEpIndexGlobal !== -1 ? allEpisodes[currentEpIndexGlobal + 1] ?? null : null;
+
+  const availableSeasons = Array.from(new Set(allEpisodes.map(ep => ep.season))).sort((a, b) => a - b);
+  const activeSeason = selectedSeason ?? currentEp?.season ?? availableSeasons[0] ?? 1;
+  const episodesInSeason = allEpisodes.filter(ep => ep.season === activeSeason);
 
   // --- EFFETTO 1: RECUPERO METADATI ---
   // Carica i dati dell'interfaccia (titoli, liste episodi) per l'overlay del player.
+  // Prova prima come serie TV; se il contenuto è un film (o l'id non corrisponde a
+  // nessuna serie), ripiega su 'film'. In precedenza veniva chiamato solo con
+  // 'serie_tv', quindi per i film i metadati non venivano mai caricati.
   useEffect(() => {
     const fetchUIContent = async () => {
       try {
-        const details = await getMediaDetails(targetId, 'serie_tv'); 
+        let details = await getMediaDetails(targetId, 'serie_tv');
+        let tipo: 'film' | 'serie_tv' = 'serie_tv';
+
+        if (!details) {
+          details = await getMediaDetails(targetId, 'film');
+          tipo = 'film';
+        }
+
         if (details) {
-            setMetadata(details as unknown as ContentMetadata);
+          const episodi = (details.episodes ?? []) as EpisodeApiShape[];
+          setMetadata({
+            title: details.title,
+            description: details.description,
+            heroImage: details.heroImage,
+            tipo: episodi.length > 0 ? 'serie_tv' : tipo,
+            titoloSerie: episodi.length > 0 ? details.title : undefined,
+            episodi,
+          });
         }
       } catch (err) {
         console.error("Errore recupero testi interfaccia", err);
@@ -275,7 +322,7 @@ export default function WatchPage({ params }: PageProps) {
     if (!showControls) return;
     const timer = setTimeout(() => setShowControls(false), 4000);
     return () => clearTimeout(timer);
-  }, [showControls, showEpisodes, showAudioSub]); 
+  }, [showControls, showEpisodes, showAudioSub, sidebarView]); 
 
   // --- HANDLER SELEZIONI UTENTE ---
   const handleAudioChange = (index: number) => {
@@ -382,11 +429,11 @@ export default function WatchPage({ params }: PageProps) {
                     <>
                         <span className="text-lg font-bold">{metadata.titoloSerie}</span>
                         <span className="text-lg text-gray-300 font-light">
-                            {currentEp ? `E${currentEp.episodeNumber} ${currentEp.title}` : metadata.titolo}
+                            {currentEp ? currentEp.title : metadata.title}
                         </span>
                     </>
                   ) : (
-                    <span className="text-lg font-bold">{metadata?.titolo}</span>
+                    <span className="text-lg font-bold">{metadata?.title}</span>
                   )}
                 </div>
 
@@ -451,62 +498,122 @@ export default function WatchPage({ params }: PageProps) {
         {/* Sidebar Episodi (visibile solo per serie TV) */}
         {showEpisodes && metadata?.tipo === 'serie_tv' && (
           <div className="absolute right-0 top-0 bottom-24 w-md bg-[#181818] z-20 overflow-y-auto shadow-2xl flex flex-col">
-            <div className="flex flex-col py-4">
-              {metadata.episodi?.map((ep) => {
-                // Layout differenziato per l'episodio attualmente in riproduzione
-                if (ep.isCurrent) {
-                  return (
-                    <div key={ep.id} className="border border-white p-4 mx-4 my-2 bg-[#181818]">
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="flex gap-4 items-center">
-                          <span className="text-xl font-bold">{ep.episodeNumber}</span>
-                          <span className="text-lg font-bold">{ep.title}</span>
-                        </div>
-                        {/* Indicatore visivo di riproduzione */}
-                        <div className="w-24 h-0.5 bg-zinc-700 relative">
-                          <div className="absolute top-0 left-0 h-full bg-red-600 w-1/3"></div>
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="w-40 shrink-0 aspect-video bg-zinc-800 relative overflow-hidden rounded">
-                          {ep.image && (
-                            <Image 
-                              src={ep.image} 
-                              alt={ep.title} 
-                              fill
-                              sizes="160px"
-                              className="object-cover" 
-                            />
-                          )}
-                        </div>
-                        <p className="text-sm text-zinc-300 line-clamp-4 leading-snug">
-                          {ep.description}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                }
 
-                // Layout compatto per gli altri episodi della lista
-                return (
-                  <div 
-                    key={ep.id} 
-                    onClick={() => {
-                      setShowEpisodes(false);
-                      setIsPlaying(false); 
-                      router.push(`/watch/${ep.id}`); 
-                    }}
-                    className="flex justify-between items-center py-4 mx-8 border-b border-zinc-800 hover:bg-white/5 transition cursor-pointer"
-                  >
-                    <div className="flex gap-4 items-center">
-                      <span className="text-xl font-bold text-zinc-300">{ep.episodeNumber}</span>
-                      <span className="text-lg font-medium text-zinc-300">{ep.title}</span>
-                    </div>
-                    <div className="w-20 h-0.5 bg-zinc-700"></div>
-                  </div>
-                );
-              })}
-            </div>
+            {sidebarView === 'seasons' ? (
+              /* VISTA STAGIONI: schermo intero dentro la sidebar, stile Netflix.
+                 La freccia indietro qui riporta alla lista episodi, non chiude la sidebar. */
+              <>
+                <div className="flex items-center gap-4 px-6 py-6 sticky top-0 bg-[#181818] z-10 border-b border-zinc-800">
+                  <button onClick={() => setSidebarView('episodes')} className="hover:text-gray-300 transition">
+                    <ArrowLeft size={28} />
+                  </button>
+                  <span className="text-2xl font-bold">{metadata.titoloSerie ?? metadata.title}</span>
+                </div>
+
+                <div className="flex flex-col py-2">
+                  {availableSeasons.map(seasonNum => {
+                    const isActive = seasonNum === activeSeason;
+                    return (
+                      <button
+                        key={seasonNum}
+                        onClick={() => {
+                          setSelectedSeason(seasonNum);
+                          setSidebarView('episodes');
+                        }}
+                        className={`flex items-center gap-4 px-6 py-4 mx-4 my-1 text-left transition ${isActive ? 'border border-white' : 'hover:bg-white/5'}`}
+                      >
+                        <span className="w-6 flex justify-center">
+                          {isActive && <Check size={20} />}
+                        </span>
+                        <span className="text-lg font-bold">Stagione {seasonNum}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              /* VISTA EPISODI: header con freccia (chiude la sidebar) + selettore stagione cliccabile. */
+              <>
+                <div className="flex items-center gap-4 px-6 py-6 sticky top-0 bg-[#181818] z-10 border-b border-zinc-800">
+                  <button onClick={() => setShowEpisodes(false)} className="hover:text-gray-300 transition">
+                    <ArrowLeft size={28} />
+                  </button>
+
+                  {availableSeasons.length > 1 ? (
+                    <button
+                      onClick={() => setSidebarView('seasons')}
+                      className="flex items-center gap-2 text-2xl font-bold hover:text-gray-300 transition"
+                    >
+                      Stagione {activeSeason}
+                    </button>
+                  ) : (
+                    <span className="text-2xl font-bold">Stagione {activeSeason}</span>
+                  )}
+                </div>
+
+                <div className="flex flex-col py-4">
+                  {episodesInSeason.map((ep, i) => {
+                    const isCurrent = ep.id === targetId;
+
+                    // Layout differenziato per l'episodio attualmente in riproduzione
+                    if (isCurrent) {
+                      return (
+                        <div key={ep.id} className="border border-white p-4 mx-4 my-2 bg-[#181818]">
+                          <div className="flex justify-between items-center mb-4">
+                            <div className="flex gap-4 items-center">
+                              <span className="text-xl font-bold">{i + 1}</span>
+                              <span className="text-lg font-bold">{ep.title}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-4">
+                            <div className="w-40 shrink-0 aspect-video bg-zinc-800 relative overflow-hidden rounded">
+                              {ep.image && (
+                                <Image 
+                                  src={ep.image} 
+                                  alt={ep.title} 
+                                  fill
+                                  sizes="160px"
+                                  className="object-cover" 
+                                />
+                              )}
+                              {/* Badge "In riproduzione", stile Netflix */}
+                              <div className="absolute inset-0 bg-black/40 flex items-end p-2">
+                                <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
+                                  <Volume2 size={14} />
+                                  In riproduzione
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-sm text-zinc-300 line-clamp-4 leading-snug">
+                              {ep.desc}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Layout compatto per gli altri episodi della lista
+                    return (
+                      <div 
+                        key={ep.id} 
+                        onClick={() => {
+                          setShowEpisodes(false);
+                          setIsPlaying(false); 
+                          router.push(`/watch/${ep.id}`); 
+                        }}
+                        className="flex justify-between items-center py-4 mx-8 border-b border-zinc-800 hover:bg-white/5 transition cursor-pointer"
+                      >
+                        <div className="flex gap-4 items-center">
+                          <span className="text-xl font-bold text-zinc-300">{i + 1}</span>
+                          <span className="text-lg font-medium text-zinc-300">{ep.title}</span>
+                        </div>
+                        <div className="w-20 h-0.5 bg-zinc-700"></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
 

@@ -41,7 +41,10 @@ export default function MovieDetailModal() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedSeason, setSelectedSeason] = useState<number>(1);
     const [resumeTime, setResumeTime] = useState<number | null>(null);
-    const [episodeResumeTimes, setEpisodeResumeTimes] = useState<Record<string, number>>({});
+    // Progresso per episodio: durata vista + timestamp di ultimo aggiornamento.
+    // aggiornato_il è l'unica fonte affidabile per capire QUALE episodio riprendere,
+    // dato che ogni episodio ha un proprio record "guarda" indipendente.
+    const [episodeProgress, setEpisodeProgress] = useState<Record<string, { time: number; updatedAt: string }>>({});
     const [isFavorite, setIsFavorite] = useState(false);
     const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
 
@@ -107,12 +110,14 @@ export default function MovieDetailModal() {
             }
         };
 
+        // Usato solo per i FILM: qui `id` è direttamente l'id_contenuto reale,
+        // quindi la query su /api/watch/[id]/progress trova il record giusto.
+        // Per le serie TV questo endpoint (chiamato con l'id della serie) non
+        // corrisponde a nessun episodio specifico: il progresso per le serie
+        // va sempre dedotto da episodeProgress (vedi loadEpisodeResumeInfo).
         const loadResumeInfo = async () => {
-            if (!id || !selectedProfile?.id_profilo) {
-                if (isMounted) {
-                    setResumeTime(null);
-                    setEpisodeResumeTimes({});
-                }
+            if (!id || !selectedProfile?.id_profilo || type !== "film") {
+                if (isMounted) setResumeTime(null);
                 return;
             }
 
@@ -131,9 +136,12 @@ export default function MovieDetailModal() {
             }
         };
 
+        // Recupera durata vista + timestamp di aggiornamento per OGNI episodio.
+        // aggiornato_il ci permette di capire qual è stato l'ultimo episodio
+        // effettivamente guardato, indipendentemente dal loro ordine nell'array.
         const loadEpisodeResumeInfo = async () => {
             if (!selectedProfile?.id_profilo || !movie?.episodes?.length) {
-                if (isMounted) setEpisodeResumeTimes({});
+                if (isMounted) setEpisodeProgress({});
                 return;
             }
 
@@ -144,13 +152,21 @@ export default function MovieDetailModal() {
                         if (!response.ok) return [ep.id, null] as const;
 
                         const data = await response.json();
-                        const savedTime = typeof data?.data?.durata_visualizzata === "number" ? data.data.durata_visualizzata : null;
-                        return [ep.id, savedTime && savedTime > 5 ? savedTime : null] as const;
+                        const record = data?.data;
+                        const savedTime = typeof record?.durata_visualizzata === "number" ? record.durata_visualizzata : null;
+                        const updatedAt: string | null = record?.aggiornato_il ?? null;
+
+                        if (savedTime && savedTime > 5 && updatedAt) {
+                            return [ep.id, { time: savedTime, updatedAt }] as const;
+                        }
+                        return [ep.id, null] as const;
                     })
                 );
 
                 if (isMounted) {
-                    setEpisodeResumeTimes(Object.fromEntries(results.filter(([, value]) => value !== null)) as Record<string, number>);
+                    setEpisodeProgress(
+                        Object.fromEntries(results.filter(([, value]) => value !== null)) as Record<string, { time: number; updatedAt: string }>
+                    );
                 }
             } catch (error) {
                 console.error("Errore nel recupero dei progressi degli episodi:", error);
@@ -164,6 +180,7 @@ export default function MovieDetailModal() {
         return () => {
             isMounted = false;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, selectedProfile?.id_profilo, movie?.episodes, type]);
 
     const closeModal = () => {
@@ -213,7 +230,23 @@ export default function MovieDetailModal() {
         }
     };
 
-    const watchTargetId = Object.keys(episodeResumeTimes)[0] || (movie?.episodes?.length ? movie.episodes[0].id : id);
+    // FIX: prima si sceglieva Object.keys(episodeResumeTimes)[0], cioè il primo
+    // episodio dell'array con un progresso salvato — non necessariamente quello
+    // effettivamente in corso (bug). Ora si calcola l'episodio con aggiornato_il
+    // più recente tra quelli con un progresso valido: questa è l'unica fonte
+    // di verità corretta per sapere qual è l'ultimo episodio guardato.
+    const mostRecentEpisodeEntry = Object.entries(episodeProgress).reduce<
+        [string, { time: number; updatedAt: string }] | null
+    >((latest, current) => {
+        if (!latest) return current;
+        return new Date(current[1].updatedAt) > new Date(latest[1].updatedAt) ? current : latest;
+    }, null);
+
+    const watchTargetId =
+        mostRecentEpisodeEntry?.[0] ||
+        (movie?.episodes?.length ? movie.episodes[0].id : id);
+
+    const displayResumeTime = mostRecentEpisodeEntry?.[1].time ?? resumeTime;
 
     return (
         <div className={`fixed inset-0 z-500 flex justify-center bg-black/70 overflow-y-auto transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`}>
@@ -252,7 +285,7 @@ export default function MovieDetailModal() {
                                     <Link href={`/watch/${watchTargetId ?? id}`}>
                                         <button className="flex items-center gap-2 bg-white text-black px-8 py-2.5 rounded shadow hover:bg-white/80 transition font-bold">
                                             <Play fill="black" size={20}/>
-                                            {resumeTime || Object.keys(episodeResumeTimes).length > 0 ? `Riprendi · ${formatResumeTime(resumeTime ?? Object.values(episodeResumeTimes)[0] ?? 0)}` : "Riproduci"}
+                                            {displayResumeTime ? `Riprendi · ${formatResumeTime(displayResumeTime)}` : "Riproduci"}
                                         </button>
                                     </Link>
                                     <button
@@ -351,8 +384,8 @@ export default function MovieDetailModal() {
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <h4 className="font-bold text-lg leading-tight">{ep.title}</h4>
-                                                    <span className={`font-semibold ${episodeResumeTimes[ep.id] ? "text-emerald-400" : "text-zinc-400"}`}>
-                                                        {episodeResumeTimes[ep.id] ? `Riprendi · ${formatResumeTime(episodeResumeTimes[ep.id])}` : ep.time}
+                                                    <span className={`font-semibold ${episodeProgress[ep.id] ? "text-emerald-400" : "text-zinc-400"}`}>
+                                                        {episodeProgress[ep.id] ? `Riprendi · ${formatResumeTime(episodeProgress[ep.id].time)}` : ep.time}
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-zinc-400 line-clamp-2">
