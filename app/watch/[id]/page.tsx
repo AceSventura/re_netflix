@@ -10,6 +10,7 @@ import Hls from 'hls.js';
 import { getMediaDetails } from "@/app/actions/media";
 import { useProfiles } from '@/context/ProfileContext';
 
+// --- INTERFACCE E TIPI ---
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -39,19 +40,23 @@ interface MediaTrack {
 }
 
 export default function WatchPage({ params }: PageProps) {
+  // --- INIZIALIZZAZIONE E REFERENZE ---
   const router = useRouter();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const hlsRef = useRef<Hls | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null); // Puntatore diretto all'elemento DOM del video
+  const hlsRef = useRef<Hls | null>(null); // Istanza del motore HLS.js
   const { selectedProfile } = useProfiles();
-  const progressLastSavedRef = useRef<number | null>(null);
+  const progressLastSavedRef = useRef<number | null>(null); // Memoria per evitare salvataggi API ridondanti
   
+  // Risoluzione asincrona dei parametri URL (pattern React 19 / Next.js App Router)
   const resolvedParams = use(params);
-  const targetId = resolvedParams.id;   // id del contenuto da guardare, passato come parametro nell'URL
-  const profileId = selectedProfile?.id_profilo; // id del profilo selezionato, ottenuto dal contesto dei profili
+  const targetId = resolvedParams.id;
+  const profileId = selectedProfile?.id_profilo;
 
+  // --- STATI: METADATI E UI ---
   const [metadata, setMetadata] = useState<ContentMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
   
+  // --- STATI: MOTORE DI RIPRODUZIONE ---
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(100);
   const [isMuted, setIsMuted] = useState(false);
@@ -59,6 +64,7 @@ export default function WatchPage({ params }: PageProps) {
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
   
+  // --- STATI: CONTROLLI SECONDARI ---
   const [showEpisodes, setShowEpisodes] = useState(false);
   const [showAudioSub, setShowAudioSub] = useState(false);
   
@@ -68,10 +74,13 @@ export default function WatchPage({ params }: PageProps) {
   const [currentSubtitle, setCurrentSubtitle] = useState<number>(-1);
   const [resumeTime, setResumeTime] = useState<number | null>(null);
 
+  // Calcolo derivato per la navigazione degli episodi
   const currentEp = metadata?.tipo === 'serie_tv' ? metadata.episodi?.find(ep => ep.isCurrent) : null;
   const currentEpIndex = metadata?.episodi?.findIndex(ep => ep.isCurrent) ?? -1;
   const nextEpisode = (currentEpIndex !== -1 && metadata?.episodi) ? metadata.episodi[currentEpIndex + 1] : null;
 
+  // --- EFFETTO 1: RECUPERO METADATI ---
+  // Carica i dati dell'interfaccia (titoli, liste episodi) per l'overlay del player.
   useEffect(() => {
     const fetchUIContent = async () => {
       try {
@@ -86,6 +95,8 @@ export default function WatchPage({ params }: PageProps) {
     fetchUIContent();
   }, [targetId]);
 
+  // --- EFFETTO 2: INIZIALIZZAZIONE PROGRESSO STORICO ---
+  // Interroga il database per verificare se l'utente ha una sessione di visione precedente da ripristinare.
   useEffect(() => {
     const loadProgress = async () => {
       if (!profileId || !targetId) {
@@ -101,6 +112,7 @@ export default function WatchPage({ params }: PageProps) {
         const data = await response.json();
         const savedTime = data?.data?.durata_visualizzata;
 
+        // Soglia di sicurezza: ignora salvataggi inferiori a 5 secondi.
         if (typeof savedTime === 'number' && savedTime > 5) {
           setResumeTime(savedTime);
           setCurrentTime(savedTime);
@@ -115,7 +127,8 @@ export default function WatchPage({ params }: PageProps) {
     loadProgress();
   }, [profileId, targetId]);
 
-  // FIX: Modificata la firma per accettare una percentuale numerica invece di un booleano
+  // --- FUNZIONE: TELEMETRIA DI SALVATAGGIO ---
+  // Memoizzata per evitare la ricreazione ad ogni render. Esegue la chiamata POST per aggiornare il DB.
   const saveProgress = useCallback(async (seconds: number, percentage: number) => {
     if (!profileId || !targetId || !Number.isFinite(seconds) || seconds < 5) return;
 
@@ -126,7 +139,7 @@ export default function WatchPage({ params }: PageProps) {
         body: JSON.stringify({
           idProfilo: profileId,
           durataVisualizzata: Math.floor(seconds),
-          statoCompletamento: percentage, // Invia il dato numerico calcolato
+          statoCompletamento: percentage,
         }),
       });
     } catch (error) {
@@ -134,24 +147,29 @@ export default function WatchPage({ params }: PageProps) {
     }
   }, [profileId, targetId]);
 
+  // --- EFFETTO 3: APPLICAZIONE RIPRESA VISIONE ---
+  // Sposta il cursore del player al tempo salvato non appena il video è caricato.
   useEffect(() => {
     const video = videoRef.current;
     if (!video || resumeTime === null || duration <= 0) return;
 
+    // Evita di superare la durata totale del video.
     const safeResumeTime = Math.min(Math.max(0, resumeTime), Math.max(0, duration - 1));
     video.currentTime = safeResumeTime;
   }, [resumeTime, duration]);
 
+  // --- EFFETTO 4: POLLING SALVATAGGIO PROGRESSO (PERIODICO) ---
+  // Salva automaticamente i progressi di visione ogni 10 secondi.
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !profileId || !targetId) return;
 
     const interval = window.setInterval(() => {
       const current = Math.floor(video.currentTime);
+      // Evita richieste API se il video non avanza.
       if (!Number.isFinite(current) || current < 5 || current === progressLastSavedRef.current) return;
 
       progressLastSavedRef.current = current;
-      // FIX: Calcolo matematico della percentuale
       const percentage = duration > 0 ? Math.floor((current / duration) * 100) : 0;
       void saveProgress(current, percentage);
     }, 10000);
@@ -159,6 +177,8 @@ export default function WatchPage({ params }: PageProps) {
     return () => window.clearInterval(interval);
   }, [profileId, targetId, duration, saveProgress]);
 
+  // --- EFFETTO 5: SALVATAGGIO PROGRESSO (ON UNMOUNT) ---
+  // Garantisce il salvataggio esatto del minuto di abbandono quando il componente viene smontato (chiusura/navigazione).
   useEffect(() => {
     const video = videoRef.current;
 
@@ -169,12 +189,13 @@ export default function WatchPage({ params }: PageProps) {
       if (!Number.isFinite(current) || current < 5 || current === progressLastSavedRef.current) return;
 
       progressLastSavedRef.current = current;
-      // FIX: Calcolo matematico della percentuale
       const percentage = duration > 0 ? Math.floor((current / duration) * 100) : 0;
       void saveProgress(current, percentage);
     };
   }, [profileId, targetId, duration, saveProgress]);
 
+  // --- EFFETTO 6: INIZIALIZZAZIONE HLS.JS ---
+  // Cuore del sistema di streaming: converte il manifest m3u8 in un flusso video decodificabile.
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !targetId) return;
@@ -182,24 +203,27 @@ export default function WatchPage({ params }: PageProps) {
     const streamUrl = `/api/watch/${targetId}`;
     let hls: Hls;
 
+    // Controllo supporto estensione Media Source Extensions (MSE) standard nei browser desktop.
     if (Hls.isSupported()) {
         hls = new Hls({
-            startLevel: -1, 
-            capLevelToPlayerSize: true,
+            startLevel: -1, // Selezione automatica bitrate basata su banda.
+            capLevelToPlayerSize: true, // Ottimizza la risoluzione scaricata in base alla dimensione della finestra.
         });
 
         hls.loadSource(streamUrl);
         hls.attachMedia(video);
         hlsRef.current = hls;
 
+        // Estrazione tracce audio e sottotitoli a parsing del manifest completato.
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
             setAudioTracks((hls.audioTracks as unknown as MediaTrack[]) || []);
             setSubtitleTracks((hls.subtitleTracks as unknown as MediaTrack[]) || []);
             
-            video.play().catch((e) => console.log("Autoplay bloccato.", e));
+            video.play().catch((e) => console.log("Autoplay bloccato dal browser.", e));
             setIsPlaying(true);
         });
 
+        // Listener dinamici per aggiornamenti del manifesto (es. flussi live o segmenti aggiuntivi).
         hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (event, data) => {
             setAudioTracks((data.audioTracks as unknown as MediaTrack[]) || (hls.audioTracks as unknown as MediaTrack[]) || []);
         });
@@ -208,6 +232,7 @@ export default function WatchPage({ params }: PageProps) {
             setSubtitleTracks((data.subtitleTracks as unknown as MediaTrack[]) || (hls.subtitleTracks as unknown as MediaTrack[]) || []);
         });
 
+        // Gestione errori di rete o decodifica.
         hls.on(Hls.Events.ERROR, (event, data) => {
             if (data.fatal) {
                 console.error("Errore fatale HLS:", data.type, data.details);
@@ -215,7 +240,9 @@ export default function WatchPage({ params }: PageProps) {
                 hls.destroy();
             }
         });
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+    } 
+    // Fallback per browser con supporto nativo HLS (principalmente Safari su iOS/macOS).
+    else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = streamUrl;
         video.addEventListener("loadedmetadata", () => {
             video.play().catch((e) => console.log("Autoplay bloccato.", e));
@@ -224,10 +251,11 @@ export default function WatchPage({ params }: PageProps) {
     }
 
     return () => {
-        if (hls) hls.destroy();
+        if (hls) hls.destroy(); // Previene memory leak alla distruzione del player.
     };
   }, [targetId]);
 
+  // --- SINCRONIZZAZIONE STATO REACT -> DOM ---
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) {
@@ -242,12 +270,14 @@ export default function WatchPage({ params }: PageProps) {
     if (videoRef.current) videoRef.current.volume = isMuted ? 0 : volume / 100;
   }, [volume, isMuted]);
 
+  // --- GESTIONE INTERFACCIA: AUTO-HIDE CONTROLLI ---
   useEffect(() => {
     if (!showControls) return;
     const timer = setTimeout(() => setShowControls(false), 4000);
     return () => clearTimeout(timer);
   }, [showControls, showEpisodes, showAudioSub]); 
 
+  // --- HANDLER SELEZIONI UTENTE ---
   const handleAudioChange = (index: number) => {
     if (hlsRef.current) {
         hlsRef.current.audioTrack = index;
@@ -257,11 +287,12 @@ export default function WatchPage({ params }: PageProps) {
 
   const handleSubtitleChange = (index: number) => {
     if (hlsRef.current) {
-        hlsRef.current.subtitleTrack = index;
+        hlsRef.current.subtitleTrack = index; // Impostare a -1 disattiva i sottotitoli in HLS.js.
         setCurrentSubtitle(index);
     }
   };
 
+  // Utility conversione secondi -> formato HH:MM:SS o MM:SS
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -269,10 +300,12 @@ export default function WatchPage({ params }: PageProps) {
     return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}` : `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // --- RENDER ---
   return (
     <div className="w-full h-screen bg-black text-white flex flex-col overflow-hidden" onMouseMove={() => setShowControls(true)}>
       <div className="relative w-full flex-1 bg-black overflow-hidden" onMouseLeave={() => !showEpisodes && !showAudioSub && setShowControls(false)}>
         
+        {/* Overlay Errore Fatale */}
         {error && (
             <div className="absolute inset-0 flex items-center justify-center z-40 text-white flex-col gap-4 bg-black">
                 <p className="text-xl font-semibold">{error}</p>
@@ -282,6 +315,7 @@ export default function WatchPage({ params }: PageProps) {
             </div>
         )}
 
+        {/* Livello Base: Elemento Video DOM */}
         <video
           ref={videoRef}
           className="w-full h-full object-contain"
@@ -295,21 +329,25 @@ export default function WatchPage({ params }: PageProps) {
           onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
         />
 
+        {/* Livello Superiore: Controlli Overlay */}
         {showControls && (
           <div className="absolute inset-0 z-10 flex flex-col justify-between">
+            {/* Barra Superiore (Navigazione) */}
             <div className="pt-8 px-8 bg-linear-to-b from-black/80 to-transparent pb-16">
                 <button onClick={() => router.back()} className="hover:text-gray-300 transition">
                   <ArrowLeft size={40} />
                 </button>
             </div>
 
+            {/* Barra Inferiore (Player e Strumenti) */}
             <div className="bg-linear-to-t from-black/90 via-black/60 to-transparent px-8 py-8 flex flex-col gap-4">
               
+              {/* Barra di Scorrimento (Seek Bar) */}
               <div className="relative w-full h-1 bg-white/20 cursor-pointer" onClick={(e) => {
                 if (videoRef.current && duration > 0) {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const pos = (e.clientX - rect.left) / rect.width;
-                  videoRef.current.currentTime = pos * duration;
+                  videoRef.current.currentTime = pos * duration; // Calcolo della posizione target
                 }
               }}>
                 <div className="absolute top-0 left-0 h-full bg-red-600" style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }} />
@@ -317,7 +355,7 @@ export default function WatchPage({ params }: PageProps) {
 
               <div className="flex items-center justify-between mt-2 relative">
                 
-                {/* SETTORE SINISTRO */}
+                {/* SETTORE SINISTRO: Controlli Riproduzione e Volume */}
                 <div className="flex items-center gap-6">
                   <button onClick={() => setIsPlaying(!isPlaying)} className="hover:scale-110 transition">
                     {isPlaying ? <Pause size={32} fill="white" /> : <Play size={32} fill="white" />}
@@ -332,12 +370,13 @@ export default function WatchPage({ params }: PageProps) {
                     <button onClick={() => setIsMuted(!isMuted)} className="hover:text-gray-300 transition">
                       {isMuted || volume === 0 ? <VolumeX size={32} /> : <Volume2 size={32} />}
                     </button>
+                    {/* Range input espandibile on hover per il controllo volume */}
                     <input type="range" min="0" max="100" value={volume} onChange={(e) => setVolume(parseInt(e.target.value))} className="w-0 opacity-0 group-hover:w-24 group-hover:opacity-100 transition-all duration-300 accent-white h-1 bg-white/30 rounded-lg appearance-none cursor-pointer" />
                   </div>
                   <span className="text-sm font-light ml-2">{formatTime(currentTime)} / {formatTime(duration)}</span>
                 </div>
 
-                {/* SETTORE CENTRALE */}
+                {/* SETTORE CENTRALE: Informazioni Titolo (Centrato in modo assoluto per stabilità layout) */}
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
                   {metadata?.tipo === 'serie_tv' ? (
                     <>
@@ -351,7 +390,7 @@ export default function WatchPage({ params }: PageProps) {
                   )}
                 </div>
 
-                {/* SETTORE DESTRO */}
+                {/* SETTORE DESTRO: Strumenti Avanzati (Audio, Sottotitoli, Schermo Intero) */}
                 <div className="flex items-center gap-6 relative">
                   
                   {nextEpisode && (
@@ -365,6 +404,7 @@ export default function WatchPage({ params }: PageProps) {
                         <MessageSquare size={32} />
                     </button>
                     
+                    {/* Modale Pop-up Audio e Sottotitoli */}
                     {showAudioSub && (
                         <div className="absolute bottom-16 right-0 bg-[#181818] rounded-md p-6 flex gap-12 w-max shadow-2xl border border-zinc-800">
                             <div className="flex flex-col gap-4">
@@ -408,10 +448,12 @@ export default function WatchPage({ params }: PageProps) {
           </div>
         )}
 
+        {/* Sidebar Episodi (visibile solo per serie TV) */}
         {showEpisodes && metadata?.tipo === 'serie_tv' && (
           <div className="absolute right-0 top-0 bottom-24 w-md bg-[#181818] z-20 overflow-y-auto shadow-2xl flex flex-col">
             <div className="flex flex-col py-4">
               {metadata.episodi?.map((ep) => {
+                // Layout differenziato per l'episodio attualmente in riproduzione
                 if (ep.isCurrent) {
                   return (
                     <div key={ep.id} className="border border-white p-4 mx-4 my-2 bg-[#181818]">
@@ -420,6 +462,7 @@ export default function WatchPage({ params }: PageProps) {
                           <span className="text-xl font-bold">{ep.episodeNumber}</span>
                           <span className="text-lg font-bold">{ep.title}</span>
                         </div>
+                        {/* Indicatore visivo di riproduzione */}
                         <div className="w-24 h-0.5 bg-zinc-700 relative">
                           <div className="absolute top-0 left-0 h-full bg-red-600 w-1/3"></div>
                         </div>
@@ -444,6 +487,7 @@ export default function WatchPage({ params }: PageProps) {
                   );
                 }
 
+                // Layout compatto per gli altri episodi della lista
                 return (
                   <div 
                     key={ep.id} 
