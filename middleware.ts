@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
     );
 
     // 1. Definizione delle rotte
-    const isProtectedRoute = pathname.startsWith("/browse") || pathname.startsWith("/watch");
+    const isProtectedRoute = pathname.startsWith("/browse") || pathname.startsWith("/watch") || pathname.startsWith("/account");
     const isPublicRoute = pathname === "/" || pathname === "/login" || pathname === "/register";
 
     // 2. Utente NON autenticato che tenta l'accesso a route protette -> /login

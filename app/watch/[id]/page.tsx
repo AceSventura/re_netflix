@@ -356,8 +356,8 @@ export default function WatchPage({ params }: PageProps) {
         {error && (
             <div className="absolute inset-0 flex items-center justify-center z-40 text-white flex-col gap-4 bg-black">
                 <p className="text-xl font-semibold">{error}</p>
-                <button onClick={() => router.back()} className="px-6 py-2 bg-white text-black rounded-md font-bold hover:bg-gray-200 transition">
-                    Torna indietro
+                <button onClick={() => router.push('/browse')} className="px-6 py-2 bg-white text-black rounded-md font-bold hover:bg-gray-200 transition">
+                    Torna alla home
                 </button>
             </div>
         )}
@@ -381,7 +381,7 @@ export default function WatchPage({ params }: PageProps) {
           <div className="absolute inset-0 z-10 flex flex-col justify-between">
             {/* Barra Superiore (Navigazione) */}
             <div className="pt-8 px-8 bg-linear-to-b from-black/80 to-transparent pb-16">
-                <button onClick={() => router.back()} className="hover:text-gray-300 transition">
+                <button onClick={() => router.push('/browse')} className="hover:text-gray-300 transition">
                   <ArrowLeft size={40} />
                 </button>
             </div>
@@ -532,10 +532,10 @@ export default function WatchPage({ params }: PageProps) {
                 </div>
               </>
             ) : (
-              /* VISTA EPISODI: header con freccia (chiude la sidebar) + selettore stagione cliccabile. */
+              /* VISTA EPISODI: header con freccia (porta alle stagioni) + selettore stagione cliccabile. */
               <>
                 <div className="flex items-center gap-4 px-6 py-6 sticky top-0 bg-[#181818] z-10 border-b border-zinc-800">
-                  <button onClick={() => setShowEpisodes(false)} className="hover:text-gray-300 transition">
+                  <button onClick={() => setSidebarView('seasons')} className="hover:text-gray-300 transition">
                     <ArrowLeft size={28} />
                   </button>
 
